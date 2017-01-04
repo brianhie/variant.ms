@@ -3,10 +3,12 @@
 import codecs
 import collate as coll
 import jellyfish as jf
-from nltk.tokenize.moses import MosesTokenizer
+import json
 import os
 import re
+import string
 import sys
+import uuid
 
 class Text(coll.Coll):
     def __init__(self, text_id):
@@ -14,24 +16,20 @@ class Text(coll.Coll):
         self.text_id = text_id
         self.title = '(no title)'
         self.content = ''
+        self.description = ''
 
     def tokenize(self, content=u''):
         self.content = content
         if content == '':
             return
-        self.sequence.append(Token(u'', self.text_id))
         for a in re.split(r'(\s+)', content):
             if a.strip() == '':
                 self.sequence.append(Token(a, self.text_id))
                 continue
-            for b in re.split(ur'([\.?!,:;\-–—―…\"”’]+$|^[\"“‘]+)',
+            for b in re.split(ur'([\.?!,:;\-–—―=…\}\]\)\"”’]+$|^[\{\[\(\"“‘]+)',
                               a, re.UNICODE):
-                self.sequence.append(Token(b, self.text_id))
-#        tok = MosesTokenizer()
-#        for t in tok.tokenize(content):
-#            token = Token(t, self.text_id)
-#            self.sequence.append(token)
-
+                if b != '':
+                    self.sequence.append(Token(b, self.text_id))
 
     def add_token(self, token):
         self.sequence.append(token)
@@ -61,11 +59,29 @@ class Token(coll.CollElem):
         for text_id in self._words:
             yield self._words[text_id], text_id
 
+def isspace(s):
+    return s.strip() == ''
+
+def ispunc(s):
+    return s.rstrip(string.punctuation) == ''
 
 def token_similarity(a, b):
     # Strings are a case insensitive match.
-    if a.base_word.strip() == b.base_word.strip():
+    # Match any whitespace to any whitespace.
+    if a.base_word.lower().strip() == b.base_word.lower().strip():
         return 1.
+
+    # Make it near impossible for words to map to whitespace.
+    if ((isspace(a.base_word) and not isspace(b.base_word)) or
+        (not isspace(a.base_word) and isspace(b.base_word))):
+        return -100000.
+
+    # Make it near impossible for words to map to punctuation.
+    if ispunc(a.base_word) and ispunc(b.base_word):
+        return 0.9
+    if ((ispunc(a.base_word) and not ispunc(b.base_word)) or
+        (not ispunc(a.base_word) and ispunc(b.base_word))):
+        return -100000.
 
     # Strings sound alike (approximate phonetic match).
     if a.base_word.isalpha() and b.base_word.isalpha():
@@ -78,18 +94,14 @@ def token_similarity(a, b):
         if jf.match_rating_codex(a.base_word) == jf.match_rating_codex(b.base_word):
             return 0.9
 
-    # Penalize words mapping to non alpha numerics.
-    if ((a.base_word.isalpha() and not b.base_word.isalpha()) or
-        (not a.base_word.isalpha() and b.base_word.isalpha())):
-        return -1.
-
     # Use scaled Jaro-Winkler distance.
     return (jf.jaro_winkler(a.base_word, b.base_word) * 2) - 1
 
 def collate_text(master, text):
     new_master = Text('__COLL__')
     to_insert = ''
-    for token_a, token_b, status in coll.collate(master, text, token_similarity):
+    for token_a, token_b, status in coll.collate(master, text,
+                                                 token_similarity):
         if status == 'match':
             assert(token_b.base_text_id == text.text_id)
             token_a.add(token_b.base_word + to_insert, token_b.base_text_id)
@@ -100,13 +112,12 @@ def collate_text(master, text):
             new_master.push_token(token_a)
             to_insert = ''
         elif status == 'insert':
-            to_insert = to_insert + ' ' + token_b.base_word
+            to_insert = token_b.base_word + to_insert
         else:
             assert(False)
     if to_insert != '':
-        new_master.sequence[0].add(to_insert.lstrip(' ') + ' ' +
-                                   new_master.sequence[0].get(),
-                                   text.text_id)
+        first_word = new_master.sequence[0].base_word
+        new_master.sequence[0].add(to_insert + first_word, text.text_id)
     return new_master
 
 def load_text(text_dir, text_path):
@@ -117,22 +128,7 @@ def load_text(text_dir, text_path):
     text.tokenize(text_content)
     return text
 
-if __name__ == '__main__':
-    text_dir = sys.argv[1]
-    default_base_fname = 'base.txt'
-    collated = None
-    # If base.txt is provided, use it.
-    if default_base_fname in os.listdir(text_dir):
-        collated = load_text(text_dir, default_base_fname)
-    for text_fname in os.listdir(text_dir):
-        if collated == None:
-            # If base.txt is not provided, use first file in directory.
-            collated = load_text(text_dir, text_fname)
-        else:
-            text = load_text(text_dir, text_fname)
-        # Repeatedly collate using a common base text.
-        collated = collate_text(collated, text)
-
+def o_coll_print(collated):
     for token in collated.sequence:
         sys.stdout.write(token.base_word)
     print('=============')
@@ -144,3 +140,55 @@ if __name__ == '__main__':
             sys.stdout.write('|'.join(set([ w for w in token.iter_words() ])))
             sys.stdout.write(')')
 
+def o_coll_json(collated, name):
+    coll_json = {}
+    coll_json['title'] = 'Collated text'
+    coll_json['text_id'] = str(uuid.uuid1())
+    coll_json['description'] = ''
+    coll_json['tokens'] = []
+    for token in collated.sequence:
+        words = [{
+            'word': token.base_word,
+            'text': token.base_text_id,
+            'is_base': True
+        }]
+        for word, text_id in token.iter_word_texts():
+            if text_id == token.base_text_id and word == token.base_word:
+                continue
+            words.append({
+                'word': word,
+                'text': text_id,
+                'is_base': False
+            })
+        coll_json['tokens'].append(words)
+    
+    output_dname = '../target/' + name
+    if not os.path.exists(output_dname):
+        os.makedirs(output_dname)
+    with open(output_dname + '/collated.json', 'w') as output_json:
+        json.dump(coll_json, output_json, indent=4)
+
+if __name__ == '__main__':
+    text_dir = sys.argv[1]
+    default_base_fname = 'base.txt'
+    collated = None
+    # If base.txt is provided, use it.
+    import time
+    start = time.time()
+    if default_base_fname in os.listdir(text_dir):
+        collated = load_text(text_dir, default_base_fname)
+    for text_fname in os.listdir(text_dir):
+        if collated == None:
+            # If base.txt is not provided, use first file in directory.
+            collated = load_text(text_dir, text_fname)
+            continue
+        else:
+            text = load_text(text_dir, text_fname)
+        end = time.time()
+        print('Load text: ' + str(end - start))
+        # Repeatedly collate using a common base text.
+        collated = collate_text(collated, text)
+        break
+    exit()
+    o_coll_print(collated)
+    o_coll_json(collated, text_dir.rstrip('/').split('/')[-1])
