@@ -188,7 +188,6 @@ if __name__ == '__main__':
         print('Load text: ' + str(end - start))
         # Repeatedly collate using a common base text.
         collated = collate_text(collated, text)
-        break
-    exit()
+
     o_coll_print(collated)
     o_coll_json(collated, text_dir.rstrip('/').split('/')[-1])
