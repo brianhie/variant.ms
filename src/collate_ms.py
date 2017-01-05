@@ -114,7 +114,6 @@ class CollToken(coll.CollElem):
     def add(self, word, text_id, seqs):
         self._words[text_id] = word
         self._seqs[text_id] = seqs
-        
 
     def add_seq(self, text_id, seq):
         self._seqs[text_id] += seq
@@ -269,12 +268,9 @@ def o_coll_print(collated):
         sys.stdout.write(token.word)
     print('=============')
     for token in collated.sequence:
-        if token.word.strip() == '':
-            sys.stdout.write(token.word)
-        else:
-            sys.stdout.write('(')
-            sys.stdout.write('|'.join(set([ w[0] for w in token.iter_words() ])))
-            sys.stdout.write(')')
+        sys.stdout.write('(')
+        sys.stdout.write('|'.join(set([ w[0] for w in token.iter_words() ])))
+        sys.stdout.write(') ')
 
 def create_base(base_path, corpus_id):
     # Parse the base text.
