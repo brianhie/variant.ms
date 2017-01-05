@@ -9,7 +9,6 @@ import re
 import string
 import sys
 import time
-from twisted.internet import threads
 import uuid
 
 class CollText(coll.Coll):
@@ -19,11 +18,11 @@ class CollText(coll.Coll):
 
     def add_token(self, token):
         self.sequence.append(token)
-        return self
+        
 
     def push_token(self, token):
         self.sequence.insert(0, token)
-        return self
+        
 
     def load(self, text):
         self.text_id = '__COLL__'
@@ -40,7 +39,7 @@ class CollText(coll.Coll):
         ensure_dir(self.text_dname)
         self.tokens_dname = self.text_dname + '/tokens'
         ensure_dir(self.tokens_dname)
-        return self
+        
     
     def reload(self, corpus_id):
         self.text_id = '__COLL__'
@@ -62,13 +61,13 @@ class CollText(coll.Coll):
                 coll_tok.add(token['word'], token['text_id'],
                              token['seq'])
             self.sequence.append(coll_tok)
-        return self
+        
 
     def save(self):
         # Write tokens to their respective files.
         for token in self.sequence:
             token.save(self.tokens_dname)
-        return self
+        
 
     def collate(self, text):
         insert_word = ''
@@ -115,7 +114,7 @@ class CollToken(coll.CollElem):
     def add(self, word, text_id, seqs):
         self._words[text_id] = word
         self._seqs[text_id] = seqs
-        return self
+        
 
     def add_seq(self, text_id, seq):
         self._seqs[text_id] += seq
@@ -151,7 +150,6 @@ class CollToken(coll.CollElem):
             })
         coll_token_meta['tokens'] = tokens
         return coll_token_meta
-
 
 
 class Text(coll.Coll):
@@ -208,7 +206,6 @@ class Token(coll.CollElem):
         self.corpus_id = corpus_id
         self.seq = seq
         self.meta = meta
-        #self.id = '.'.join([str(f) for f in [ corpus_id, text_id, seq ]])
 
     def save(self, dname):
         token_meta = self._dict_dump()
