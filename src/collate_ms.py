@@ -6,10 +6,50 @@ import jellyfish as jf
 import json
 import os
 import re
+import shutil
 import string
 import sys
 import time
 import uuid
+
+class Corpus:
+    def __init__(self, corpus_id, user_id):
+        self.user_id = user_id
+        self.corpus_id = corpus_id
+        self.texts = []
+        self._save_dname = get_path('', user_id, corpus_id)
+        self._save_path = self._save_dname + '/meta.json'
+        ensure_dir(self._save_dname)
+
+    def add_text(self, text_id):
+        self.texts.append(text_id)
+        self.texts.sort()
+
+    def remove_text(self, text_id):
+        self.texts.remove(text_id)
+        self.texts.sort()
+
+    def savef(self):
+        corpus_meta = {}
+        corpus_meta['user_id'] = self.user_id
+        corpus_meta['corpus_id'] = self.corpus_id
+        corpus_meta['texts'] = self.texts
+        with open(self._save_path, 'w') as output_json:
+            json.dump(corpus_meta, output_json)
+
+    def reloadf(self):
+        with open(self._save_path, 'r') as json_file:
+            corpus_meta = json.load(json_file)
+        self.user_id = corpus_meta[u'user_id']
+        self.corpus_id = corpus_meta[u'corpus_id']
+        for text_id in corpus_meta[u'texts']:
+            self.add_text(text_id)
+
+    def deletef(self):
+        for text_id in self.texts:
+            text = Text(text_id, self.corpus_id, self.user_id)
+            text.deletef()
+        shutil.rmtree(self._save_dname)
 
 class CollText(coll.Coll):
     def __init__(self):
@@ -23,48 +63,58 @@ class CollText(coll.Coll):
         self.sequence.insert(0, token)
         
     def load(self, text):
+        self.user_id = text.user_id
         self.text_id = '__COLL__'
         self.corpus_id = text.corpus_id
         self.base_text_id = text.text_id
         for seq, token in enumerate(text.sequence):
-            coll_tok = CollToken(token.word, self.text_id, self.corpus_id,
-                                 seq, self.base_text_id)
-            self.add_token(coll_tok)
-        # Directory info.
-        self.corpus_dname = '../target/' + self.corpus_id
-        ensure_dir(self.corpus_dname)
-        self.text_dname = self.corpus_dname + '/' + self.text_id
-        ensure_dir(self.text_dname)
-        self.tokens_dname = self.text_dname + '/tokens'
-        ensure_dir(self.tokens_dname)
+            coll_token = CollToken(token.word, self.text_id, self.corpus_id,
+                                   seq, self.base_text_id)
+            coll_token.add(token.word, text.text_id, [seq])
+            self.add_token(coll_token)
+        self._save_dname = get_path('', self.user_id, self.corpus_id,
+                                   self.text_id)
+        self._save_path = self._save_dname + '/tokens.json'
+        ensure_dir(self._save_dname)
+
+    def json_to_coll_token(self, json_dict):
+        word = json_dict[u'word']
+        text_id = json_dict[u'text_id']
+        corpus_id = json_dict[u'corpus_id']
+        seq = json_dict[u'seq']
+        base_text_id = json_dict[u'base_text_id']
+        coll_token = CollToken(word, text_id, corpus_id, seq, base_text_id)
+        for token in json_dict[u'tokens']:
+            coll_token.add(token[u'word'], token[u'text_id'], token[u'seq'])
+        return coll_token
         
-    def reload(self, corpus_id):
-        self.text_id = '__COLL__'
-        self.corpus_id = corpus_id
-        self.tokens_dname = '../target/' + corpus_id + '/__COLL__/tokens'
-        for seq, token_fname in enumerate(os.listdir(self.tokens_dname)):
-            with open(self.tokens_dname + '/' + token_fname) as json_file:
-                coll_token_meta = json.load(json_file)
-            assert(coll_token_meta[u'text_id'] == self.text_id)
-            assert(coll_token_meta[u'corpus_id'] == self.corpus_id)
-            if seq == 0:
-                self.base_text_id = coll_token_meta[u'base_text_id']
-            else:
-                assert(coll_token_meta[u'base_text_id'] == self.base_text_id)
-            coll_tok = CollToken(coll_token_meta[u'word'],
-                                 self.text_id, self.corpus_id, seq,
-                                 self.base_text_id)
-            for token in coll_token_meta[u'tokens']:
-                coll_tok.add(token['word'], token['text_id'],
-                             token['seq'])
-            self.sequence.append(coll_tok)
+    def reloadf(self, user_id, corpus_id):
+        self._save_dname = get_path('', user_id, corpus_id, '__COLL__')
+        self._save_path = self._save_dname + '/tokens.json'
+        ensure_dir(self._save_dname)
+        with open(self._save_path) as json_file:
+            coll_token_meta = json.load(json_file)
+        assert(coll_token_meta[u'user_id'] == user_id)
+        assert(coll_token_meta[u'corpus_id'] == corpus_id)
+        self.user_id = coll_token_meta[u'user_id']
+        self.corpus_id = coll_token_meta[u'corpus_id']
+        self.text_id = coll_token_meta[u'corpus_id']
+        self.base_text_id = coll_token_meta[u'base_text_id']
+        for t in coll_token_meta[u'coll_tokens']:
+            token = self.json_to_coll_token(t)
+            self.sequence.append(token)
         
-    def save(self):
-        tokens = []
+    def savef(self):
+        coll_text_meta = {}
+        coll_text_meta['user_id'] = self.user_id
+        coll_text_meta['corpus_id'] = self.corpus_id
+        coll_text_meta['text_id'] = self.text_id
+        coll_text_meta['base_text_id'] = self.base_text_id
+        coll_text_meta['coll_tokens'] = []
         for token in self.sequence:
-            tokens.append(token.to_json_dict())
-        with open(self.text_dname + '/tokens.json', 'w') as output_json:
-            json.dump({'tokens': tokens}, output_json)
+            coll_text_meta['coll_tokens'].append(token.to_json_dict())
+        with open(self._save_path, 'w') as output_json:
+            json.dump(coll_text_meta, output_json)
 
     def collate(self, text):
         insert_word = ''
@@ -106,7 +156,6 @@ class CollToken(coll.CollElem):
         self.base_text_id = base_text_id
         self._words = {}
         self._seqs = {}
-        self.add(word, text_id, seq)
 
     def add(self, word, text_id, seqs):
         self._words[text_id] = word
@@ -130,31 +179,27 @@ class CollToken(coll.CollElem):
         coll_token_meta['word'] = self.word
         coll_token_meta['text_id'] = self.text_id
         coll_token_meta['corpus_id'] = self.corpus_id
+        coll_token_meta['seq'] = self.seq
         coll_token_meta['base_text_id'] = self.base_text_id
-        tokens = []
+        coll_token_meta['tokens'] = []
         for word, text_id, seqs in self.iter_words():
-            tokens.append({
+            coll_token_meta['tokens'].append({
                 'word': word,
                 'text_id': text_id,
                 'seq': seqs
             })
-        coll_token_meta['tokens'] = tokens
         return coll_token_meta
 
 
 class Text(coll.Coll):
-    def __init__(self, text_id, corpus_id, meta={}):
+    def __init__(self, text_id, corpus_id, user_id, meta={}):
         super(Text, self).__init__([])
         self.text_id = text_id
         self.corpus_id = corpus_id
+        self.user_id = user_id
         self.meta = meta
-        
-        self.corpus_dname = '../target/' + self.corpus_id
-        ensure_dir(self.corpus_dname)
-        self.text_dname = self.corpus_dname + '/' + self.text_id
-        ensure_dir(self.text_dname)
-        self.tokens_dname = self.text_dname + '/tokens'
-        ensure_dir(self.tokens_dname)
+        self._save_dname = get_path('', self.user_id, self.corpus_id, self.text_id)
+        ensure_dir(self._save_dname)
         
     def _tokenize(self, content=u''):
         if content == '':
@@ -173,18 +218,30 @@ class Text(coll.Coll):
                                                self.corpus_id, seq))
                     seq += 1
 
-    def load(self, text_path):
+    def loads(self, text_string):
+        self._tokenize(content=unicode(text_string, 'utf8'))
+
+    def loadf(self, text_path):
         content = codecs.open(text_path, encoding='utf8').read()
         self._tokenize(content=content)
 
-    def save(self):
-        with open(self.text_dname + '/meta.json', 'w') as output_json:
+    def savef(self):
+        meta_path = self._save_dname + '/meta.json'
+        with open(meta_path, 'w') as output_json:
             json.dump(self.meta, output_json)
-        tokens = []
+        coll_text_meta = {}
+        coll_text_meta['user_id'] = self.user_id
+        coll_text_meta['corpus_id'] = self.corpus_id
+        coll_text_meta['text_id'] = self.text_id
+        coll_text_meta['tokens'] = []
         for token in self.sequence:
-            tokens.append(token.to_json_dict())
-        with open(self.text_dname + '/tokens.json', 'w') as output_json:
-            json.dump({'tokens': tokens}, output_json)
+            coll_text_meta['tokens'].append(token.to_json_dict())
+        tokens_path = self._save_dname + '/tokens.json'
+        with open(tokens_path, 'w') as output_json:
+            json.dump(coll_text_meta, output_json)
+
+    def deletef(self):
+        shutil.rmtree(self._save_dname)
 
 
 class Token(coll.CollElem):
@@ -207,6 +264,19 @@ class Token(coll.CollElem):
 def ensure_dir(dname):
     if not os.path.exists(dname):
         os.makedirs(dname)
+
+def get_path(fname, user_id='', corpus_id='', text_id=''):
+    user_dname = os.path.expanduser('~')
+    root_dname = '/'.join([user_dname, 'variant.ms', 'target'])
+    if user_id == '':
+        dname = root_dname
+    elif corpus_id == '':
+        dname = '/'.join([root_dname, user_id])
+    elif text_id == '':
+        dname = '/'.join([root_dname, user_id, corpus_id])
+    else:
+        dname = '/'.join([root_dname, user_id, corpus_id, text_id])
+    return dname + '/' + fname
 
 def isspace(s):
     return s.strip() == ''
@@ -260,53 +330,80 @@ def o_coll_print(collated):
             sys.stdout.write(')')
     sys.stdout.write('\n')
 
-def create_base(base_path, corpus_id):
-    # Parse the base text.
-    text_id = re.sub('\.txt$', '', base_path.split('/')[-1])
-    base_text = Text(text_id, corpus_id)
-    base_text.load(base_path)
-    base_text.save()
+def create_corpus(user_id, corpus_id):
+    corpus = Corpus(corpus_id, user_id)
+    corpus.savef()
+    return corpus
 
-    # Generate the special collated text.
-    coll_text = CollText()
-    coll_text.load(base_text)
-    coll_text.save()
-    return coll_text
+def delete_corpus(corpus):
+    corpus.deletef()
 
-def add_text(text_path, corpus_id):
-    # Reload the special collated text.
-    coll_text = CollText()
-    coll_text.reload(corpus_id)
-    # Load the text and save it.
-    text_id = re.sub('\.txt$', '', text_path.split('/')[-1])
-    text = Text(text_id, corpus_id)
-    text.load(text_path)
-    text.save()
-    # Perform the collation and update.
-    coll_text.collate(text)
-    coll_text.save()
+def create_text(user_id, corpus_id, text_id, content, meta={}):
+    text = Text(text_id, corpus_id, user_id, meta=meta)
+    text.loads(content)
+    text.savef()
     return text
 
-def collate_corpus(corpus_dir, corpus_id,
+def add_base(base, user_id, corpus_id):
+    coll_text = CollText()
+    coll_text.load(base)
+    coll_text.savef()
+    o_coll_print(coll_text)
+
+    corpus = Corpus(corpus_id, user_id)
+    corpus.add_text(base.text_id)
+    corpus.savef()
+
+    return coll_text
+
+def add_text(text, user_id, corpus_id):
+    coll_text = CollText()
+    coll_text.reloadf(user_id, corpus_id)
+    o_coll_print(coll_text)
+    coll_text.collate(text)
+    coll_text.savef()
+
+    corpus = Corpus(corpus_id, user_id)
+    corpus.reloadf()
+    corpus.add_text(text.text_id)
+    corpus.savef()
+    return text
+
+def delete_text(text):
+    text_id = text.text_id
+    user_id = text.user_id
+    corpus_id = text.corpus_id
+    text.deletef()
+
+    corpus = Corpus(corpus_id, user_id)
+    corpus.reloadf()
+    corpus.remove_text(text_id)
+    corpus.savef()
+    
+
+def collate_corpus(corpus_dir, corpus_id, user_id,
                    default_base_fname='base.txt'):
     listdir = os.listdir(corpus_dir)
     start = time.time()
     # If base.txt is provided, use it.
     coll_text = None
     if default_base_fname in listdir:
-        coll_text = create_base(corpus_dir + '/' + default_base_fname,
-                                corpus_id)
+        text_id = re.sub('\.txt$', '', default_base_fname.split('/')[-1])
+        base = Text(text_id, corpus_id, user_id)
+        base.loadf(corpus_dir + '/' + default_base_fname)
+        coll_text = add_base(base, user_id, corpus_id)
     # Repeatedly collate all files in directory.
     for pos, text_fname in enumerate(listdir):
         text_id = re.sub('\.txt$', '', text_fname.split('/')[-1])
         if coll_text == None:
             # If base.txt is not provided, use first file in directory.
-            coll_text = create_base(corpus_dir + '/' + text_fname,
-                                    corpus_id)
+            base = Text(text_id, corpus_id, user_id)
+            base.loadf(corpus_dir + '/' + default_base_fname)
+            coll_text = add_base(base, user_id, corpus_id)
             continue
-        text = Text(text_id, corpus_id)
-        text.load(corpus_dir + '/' + text_fname)
-        text.save()
+        text = Text(text_id, corpus_id, user_id)
+        text.loadf(corpus_dir + '/' + text_fname)
+        text.savef()
         coll_text.collate(text)
         end = time.time()
         sys.stdout.write('\r' + str(round(pos/float(len(listdir))*100, 1))
@@ -314,10 +411,26 @@ def collate_corpus(corpus_dir, corpus_id,
     sys.stdout.write('\r100%, ' + str(round(end - start, 1)) + 's\033[K\n')
 
     o_coll_print(coll_text)
-    coll_text.save()
+    coll_text.savef()
 
+def test():
+    corpus = create_corpus('mr.ms', 'dummy corpus')
+    text = create_text('mr.ms', 'dummy corpus', 'dummy base',
+                       'Mary had a little lamb.')
+    add_base(text, 'mr.ms', 'dummy corpus')
+    text = create_text('mr.ms', 'dummy corpus', 'dummy text',
+                       'Marry had 1 litle lambe.')
+    add_text(text, 'mr.ms', 'dummy corpus')
+    text = create_text('mr.ms', 'dummy corpus', 'dummy text1',
+                       'Marry had 1 litle lambe.')
+    add_text(text, 'mr.ms', 'dummy corpus')
+    text = create_text('mr.ms', 'dummy corpus', 'dummy text2',
+                       'Marry had 1 litle lambe.')
+    add_text(text, 'mr.ms', 'dummy corpus')
+    delete_text(text)
 
 if __name__ == '__main__':
+    #test()
     corpus_dir = sys.argv[1]
     corpus_id = corpus_dir.rstrip('/').split('/')[-1]
-    collate_corpus(corpus_dir, corpus_id)
+    collate_corpus(corpus_dir, 'mr.s', corpus_id)
