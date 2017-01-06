@@ -19,11 +19,9 @@ class CollText(coll.Coll):
     def add_token(self, token):
         self.sequence.append(token)
         
-
     def push_token(self, token):
         self.sequence.insert(0, token)
         
-
     def load(self, text):
         self.text_id = '__COLL__'
         self.corpus_id = text.corpus_id
@@ -40,7 +38,6 @@ class CollText(coll.Coll):
         self.tokens_dname = self.text_dname + '/tokens'
         ensure_dir(self.tokens_dname)
         
-    
     def reload(self, corpus_id):
         self.text_id = '__COLL__'
         self.corpus_id = corpus_id
@@ -62,12 +59,12 @@ class CollText(coll.Coll):
                              token['seq'])
             self.sequence.append(coll_tok)
         
-
     def save(self):
-        # Write tokens to their respective files.
+        tokens = []
         for token in self.sequence:
-            token.save(self.tokens_dname)
-        
+            tokens.append(token.to_json_dict())
+        with open(self.text_dname + '/tokens.json', 'w') as output_json:
+            json.dump({'tokens': tokens}, output_json)
 
     def collate(self, text):
         insert_word = ''
@@ -128,13 +125,7 @@ class CollToken(coll.CollElem):
         for text_id in self._words:
             yield self._words[text_id], text_id, self._seqs[text_id]
 
-    def save(self, dname):
-        token_meta = self._dict_dump()
-        with open(dname + '/' +
-                  str(self.seq) + '.json', 'w') as output_json:
-            json.dump(token_meta, output_json)
-
-    def _dict_dump(self):
+    def to_json_dict(self):
         coll_token_meta = {}
         coll_token_meta['word'] = self.word
         coll_token_meta['text_id'] = self.text_id
@@ -187,15 +178,13 @@ class Text(coll.Coll):
         self._tokenize(content=content)
 
     def save(self):
-        # Write any meta data about text.
         with open(self.text_dname + '/meta.json', 'w') as output_json:
             json.dump(self.meta, output_json)
-        # Write tokens to their respective files.
         tokens = []
+        for token in self.sequence:
+            tokens.append(token.to_json_dict())
         with open(self.text_dname + '/tokens.json', 'w') as output_json:
-            for token in self.sequence:
-                tokens.append(token._dict_dump())
-            json.dump({ 'tokens': tokens }, output_json)
+            json.dump({'tokens': tokens}, output_json)
 
 
 class Token(coll.CollElem):
@@ -206,13 +195,7 @@ class Token(coll.CollElem):
         self.seq = seq
         self.meta = meta
 
-    def save(self, dname):
-        token_meta = self._dict_dump()
-        with open(dname + '/' +
-                  str(self.seq) + '.json', 'w') as output_json:
-            json.dump(token_meta, output_json)
-
-    def _dict_dump(self):
+    def to_json_dict(self):
         coll_token_meta = {}
         coll_token_meta['word'] = self.word
         coll_token_meta['text_id'] = self.text_id
@@ -268,9 +251,14 @@ def o_coll_print(collated):
         sys.stdout.write(token.word)
     print('=============')
     for token in collated.sequence:
-        sys.stdout.write('(')
-        sys.stdout.write('|'.join(set([ w[0] for w in token.iter_words() ])))
-        sys.stdout.write(') ')
+        variants = '|'.join(set([ w[0] for w in token.iter_words() ]))
+        if re.sub('\s+|\|', '', variants) == '':
+            sys.stdout.write(token.word)
+        else:
+            sys.stdout.write('(')
+            sys.stdout.write(variants)
+            sys.stdout.write(')')
+    sys.stdout.write('\n')
 
 def create_base(base_path, corpus_id):
     # Parse the base text.
