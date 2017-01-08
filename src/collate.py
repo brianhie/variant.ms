@@ -1,11 +1,10 @@
 
 class Coll(object):
-    def __init__(self, sequence):
-        self.sequence = sequence
+    def __init__(self):
+        self.sequence = []
 
 class CollElem(object):
-    def __init__(self):
-        pass
+    pass
 
 def collate(collate_A, collate_B, similarity):
     A = collate_A.sequence
