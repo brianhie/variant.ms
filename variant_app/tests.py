@@ -58,12 +58,12 @@ class VariantAppTests(TestCase):
         corpus.delete()
 
     def test_HSDeath(self):
-        corpus_dir = os.path.expanduser('~/variant.ms/data/Donne_HSDeath')
+        corpus_dir = os.path.expanduser('./data/Donne_HSDeath')
         self.full_corpus(corpus_dir)
 
     def test_Sat3(self):
-        corpus_dir = os.path.expanduser('~/variant.ms/data/Donne_Sat3')
-        self.full_corpus(corpus_dir)
+        corpus_dir = os.path.expanduser('./data/Donne_Sat3')
+        #self.full_corpus(corpus_dir)
         
     @transaction.atomic
     def full_corpus(self, corpus_dir):
