@@ -1,0 +1,18 @@
+<h3>Add a new text to {{corpus.corpus_name}}</h3>
+
+{% if error_messages %}
+<ul>
+{% for msg in error_messages %}
+<li><strong>{{ msg }}</strong></li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<form action="{% url 'variant_app:create_text' corpus.id %}" method="post">
+{% csrf_token %}
+<label>Text name</label><br />
+<input type="text" name="text_name" value="" /><br />
+<label>Content</label><br />
+<textarea rows="20" name="content" cols="50" value="Add text here"></textarea><br />
+<input type="submit" value="Submit" />
+</form>

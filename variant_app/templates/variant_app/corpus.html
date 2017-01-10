@@ -1,0 +1,11 @@
+<h3>{{ corpus.corpus_name }}</h3>
+
+<a href="{% url 'variant_app:add_text' corpus.id %}">Add a new text!</a>
+
+{% if texts %}
+<ul>
+  {% for text in texts %}
+  <li><a href="{% url 'variant_app:text' text.id %}">{{ text.text_name }}</a></li>
+  {% endfor %}
+</ul>
+{% endif %}
