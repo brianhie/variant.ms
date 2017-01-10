@@ -22,13 +22,43 @@ class VariantAppTests(TestCase):
                 sys.stdout.write(variants)
                 sys.stdout.write(')')
         sys.stdout.write('\n')
-    
-    @transaction.atomic
-    def test_small(self):
-        corpus_id = 'dummy corpus'
-    
+
+    # Ensure tokenization algorithm does not lose data.
+    def test_word_loss(self):
+        corpus = Corpus(corpus_name='test word loss')
+        corpus.save()
+        content = 'Mary had a (little) lamb.'
+        text = create_text(corpus, 'base text', content)
+        text_content = ''.join([ t.word for t in text.tokens() ])
+        assert(content == text_content)
+
+    # Ensure that collation algorithm is working at a basic level.
+    def test_collation(self):
+        corpus = Corpus(corpus_name='test collation')
+        corpus.save()
+
+        content = 'Mary had a little lamb.'
+        base = create_text(corpus, 'base text', content)
+        content = 'Marry had 1 litle lambe.'
+        text1 = create_text(corpus, 'text 1', content)
+
+        coll_text = CollText.objects.get(corpus=corpus)
+        for coll_token in coll_text.tokens():
+            for token in coll_token.tokens():
+                if token.text == text1:
+                    if token.seq == 0:
+                        assert(token.word == 'Marry')
+                    elif token.seq == 4:
+                        assert(token.word == '1')
+                    elif token.seq == 6:
+                        assert(token.word == 'litle')
+                if token.seq == 9:
+                    assert(token.word == '.')
+
+    # Ensure deleted texts do not show up in collated text.
+    def test_delete_text(self):
         # Create a corpus.
-        corpus = Corpus(corpus_name=corpus_id)
+        corpus = Corpus(corpus_name='test delete text')
         corpus.save()
     
         # Initialize a base text.
@@ -44,28 +74,29 @@ class VariantAppTests(TestCase):
         text3 = create_text(corpus, 'text 3', content)
     
         # Print out the collation results.
-        coll_text = CollText.objects.get(corpus__id=corpus.id)
+        coll_text = CollText.objects.get(corpus=corpus)
         self._o_coll_print(coll_text)
     
         # Delete text 3.
         text3.delete()
-    
+
         # See changes reflected in collated text.
-        coll_text = CollText.objects.get(corpus__id=corpus.id)
+        for coll_token in coll_text.tokens():
+            for token in coll_token.tokens():
+                assert(token.word != '3')
+                assert(token.word != 'lambes')
+        coll_text = CollText.objects.get(corpus=corpus)
         self._o_coll_print(coll_text)
     
-        # Delete entire corpus.
-        corpus.delete()
 
     def test_HSDeath(self):
-        corpus_dir = os.path.expanduser('./data/Donne_HSDeath')
-        self.full_corpus(corpus_dir)
+        corpus_dir = os.path.expanduser('~/variant.ms/variant_app/data/Donne_HSDeath')
+        #self.full_corpus(corpus_dir)
 
     def test_Sat3(self):
-        corpus_dir = os.path.expanduser('./data/Donne_Sat3')
+        corpus_dir = os.path.expanduser('~/variant.ms/variant_app/data/Donne_Sat3')
         #self.full_corpus(corpus_dir)
         
-    @transaction.atomic
     def full_corpus(self, corpus_dir):
         corpus_id = 'Donne_HSDeath'
         default_base_fname = 'base.txt'
