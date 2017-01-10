@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 from django.db import transaction
 import jellyfish as jf
 import re
@@ -91,39 +92,39 @@ def _token_similarity(a, b):
     # Strings are a case insensitive match.
     # Match any whitespace to any whitespace.
     if a.word.lower().strip() == b.word.lower().strip():
-        return 1.
+        return True
 
     # Make it impossible for words to map to whitespace.
     if ((_isspace(a.word) and not _isspace(b.word)) or
         (not _isspace(a.word) and _isspace(b.word))):
-        return -1.
+        return False
 
     # Make it impossible for words to map to punctuation.
     if _ispunc(a.word) and _ispunc(b.word):
-        return 0.9
+        return True
     if ((_ispunc(a.word) and not _ispunc(b.word)) or
         (not _ispunc(a.word) and _ispunc(b.word))):
-        return -1.
+        return False
 
     # Strings sound alike (approximate phonetic match).
     if a.word.isalpha() and b.word.isalpha():
         if jf.metaphone(a.word) == jf.metaphone(b.word):
-            return 0.9
+            return True
         if jf.soundex(a.word) == jf.soundex(b.word):
-            return 0.9
+            return True
         if jf.nysiis(a.word) == jf.nysiis(b.word):
-            return 0.9
+            return True
         if jf.match_rating_codex(a.word) == jf.match_rating_codex(b.word):
-            return 0.9
+            return True
 
     # Use scaled Jaro-Winkler distance.
-    return jf.jaro_winkler(a.word, b.word)
+    return jf.jaro_winkler(a.word, b.word) > 0.8
 
 
 #@transaction.atomic
 def collate(coll_text, tokens):
     try:
-        coll_tokens = CollToken.objects.filter(coll_text__id=coll_text.id)
+        coll_tokens = CollToken.objects.filter(coll_text=coll_text)
     except CollToken.DoesNotExist:
         sys.stderr.write('No coll tokens for corpus ' + str(coll_text.corpus.id) + '\n')
         return
@@ -144,12 +145,12 @@ def collate(coll_text, tokens):
                 link_prev = []
         elif status == 'delete':
             # No new tokens need to be linked.
-            for to_link in link_prev:
-                to_link.coll_token = coll_token
-                to_link.is_base = True
-                to_link.save()
-            link_prev = []
-            pass
+            if coll_token:
+                for to_link in link_prev:
+                    to_link.coll_token = coll_token
+                    to_link.is_base = True
+                    to_link.save()
+                link_prev = []
         elif status == 'insert':
             # Inserted tokens map to first coll token.
             # (This loops iterates backwards through the texts.)
@@ -157,9 +158,13 @@ def collate(coll_text, tokens):
         else:
             assert(False)
 
-    for to_link in link_prev:
-        to_link.coll_token = coll_token
-        to_link.is_base = True
-        to_link.save()
+    try:
+        coll_token = CollToken.objects.get(coll_text=coll_text, seq=0)
+        for to_link in link_prev:
+            to_link.coll_token = coll_token
+            to_link.is_base = True
+            to_link.save()
+    except CollToken.DoesNotExist:
+        pass
 
 
