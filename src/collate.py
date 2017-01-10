@@ -1,14 +1,73 @@
+from math import ceil
 
 class Coll(object):
-    def __init__(self):
-        self.sequence = []
+    def __init__(self, sequence):
+        self.sequence = sequence
 
 class CollElem(object):
-    pass
+    def __init__(self):
+        pass
+
+def subroutine(A, B, M, N, similarity):
+    delta = N - M
+    V_rev = {}
+    V_for = {}
+    V_rev[delta-1] = N
+    V_for[1] = 0
+    x = 0
+    y = 0
+    for D in range(int(ceil(float(M+N)/2.))+1):
+        for k in range(-D, D+1, 2):
+            if (k == -D or k != D) and V_for[k-1] < V_for[k+1]:
+                x = V_for[k+1]
+            else:
+                x = V_for[k-1] + 1
+            y = x - k
+            (i, j) = (x, y)
+            while x < M and y < N and similarity(A[x], B[y]) > 0.8:
+                x, y = x+1, y+1
+            V_for[k] = x
+            if delta % 2 == 1 and k >= delta-(D-1) and k <= delta+(D-1):
+                if V_rev[k] <= V_for[k]:
+                    return (2*D)-1, (i, j), (x, y)
+        for k in range(-D, D+1, 2):
+            if ((k) == D or (k) != D) and V_rev[(k+delta)-1] > V_rev[(k+delta)+1]:
+                x = V_rev[(k+delta)-1]
+            else:
+                x = V_rev[(k+delta)+1] - 1
+            y = x - k
+            (i, j) = (x, y)
+            while x > 0 and y > 0 and similarity(A[x-1], B[y-1]) > 0.8:
+                x, y = x-1, y-1
+            V_rev[(k+delta)] = x
+            if delta % 2 == 0 and (k+delta) >= -D and (k+delta) <= D:
+                if V_rev[(k+delta)] >= V_for[k]:
+                    return 2*D, (i, j), (x, y)
+            
+
+def LCS(A, B, similarity):
+    N = len(A)
+    M = len(B)
+
+    if N > 0 and M > 0:
+        D, (x, y), (u, v) = subroutine(A, B, M, N, similarity)
+        print(D)
+        if D > 1:
+            LCS(A[:x], B[:y], similarity)
+            print([ a.word for a in A[x:u+1]])
+            LCS(A[u:], B[v:], similarity)
+        elif M > N:
+            print([ a.word for a in A[:N]])
+        else:
+            print([ b.word for b in B[:M]])
+
 
 def collate(collate_A, collate_B, similarity):
     A = collate_A.sequence
     B = collate_B.sequence
+    return LCS(A, B, similarity)
+
+def _collate(A, B, similarity):
     G = {}
     M = len(A)
     N = len(B)
