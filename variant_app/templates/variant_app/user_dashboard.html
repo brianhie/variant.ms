@@ -1,0 +1,9 @@
+<a href="{% url 'variant_app:add_corpus' %}">Add a new corpus!</a>
+
+{% if corpuses %}
+<ul>
+  {% for corpus in corpuses %}
+  <li><a href="{% url 'variant_app:corpus' corpus.id %}">{{ corpus.corpus_name }}</a></li>
+  {% endfor %}
+</ul>
+{% endif %}

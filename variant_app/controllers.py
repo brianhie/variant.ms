@@ -11,7 +11,16 @@ import variant_collate as vc
 from models import Corpus, CollText, Text, CollToken, Token
 
 
-#@transaction.atomic
+@transaction.atomic
+def create_corpus(corpus_name, content):
+    corpus = Corpus(corpus_name=corpus_name)
+    corpus.save()
+
+    create_text(corpus, corpus_name, content)
+
+    return corpus
+
+@transaction.atomic
 def create_text(corpus, text_name, content):
     text = Text(text_name=text_name, corpus=corpus)
     text.save()
@@ -121,10 +130,10 @@ def _token_similarity(a, b):
     return jf.jaro_winkler(a.word, b.word) > 0.8
 
 
-#@transaction.atomic
+@transaction.atomic
 def collate(coll_text, tokens):
     try:
-        coll_tokens = CollToken.objects.filter(coll_text=coll_text)
+        coll_tokens = CollToken.objects.filter(coll_text__id=coll_text.id)
     except CollToken.DoesNotExist:
         sys.stderr.write('No coll tokens for corpus ' + str(coll_text.corpus.id) + '\n')
         return

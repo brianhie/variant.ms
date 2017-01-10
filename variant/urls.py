@@ -15,8 +15,13 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.views.generic import RedirectView
+
+from variant_app.views import index
 
 urlpatterns = [
+    url(r'^$', index, name='home'),
     url(r'^variant/', include('variant_app.urls')),
     url(r'^admin/', admin.site.urls),
+    url(r'^accounts/', include('registration.backends.hmac.urls')), # From django-registration.
 ]

@@ -1,4 +1,4 @@
-<h3>Add a new text to {{corpus.corpus_name}}</h3>
+<h3>Add a new corpus</h3>
 
 {% if error_messages %}
 <ul>
@@ -8,11 +8,11 @@
 </ul>
 {% endif %}
 
-<form action="{% url 'variant_app:create_text' corpus.id %}" method="post">
+<form action="{% url 'variant_app:create_corpus' %}" method="post">
 {% csrf_token %}
-<label>Text name</label><br />
-<input type="text" name="text_name" value="" /><br />
-<label>Content</label><br />
+<label>Corpus name</label><br />
+<input type="text" name="corpus_name" value="" /><br />
+<label>Add the base text!</label><br />
 <textarea rows="30" name="content" cols="60" placeholder="Add text here"></textarea><br />
 <input type="submit" value="Submit" />
 </form>

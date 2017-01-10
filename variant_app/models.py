@@ -30,7 +30,7 @@ class CollToken(models.Model):
     corpus = models.ForeignKey(Corpus, on_delete=models.CASCADE, default=None)
     coll_text = models.ForeignKey(CollText, on_delete=models.CASCADE, default=None)
     word = models.TextField(default='')
-    seq = models.IntegerField(default=-1)
+    seq = models.IntegerField(default=-2)
 
     def __str__(self):
         return self.coll_text.text_name + '_' + str(self.seq)

@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -69,6 +70,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'variant.wsgi.application'
+
+# Registration (from django-registration).
+# https://django-registration.readthedocs.io
+ACCOUNT_ACTIVATION_DAYS = 7 # One-week activation window.
+
 
 
 # Database
