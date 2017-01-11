@@ -1,0 +1,7 @@
+You're almost done!
+
+Thanks for signing up to register a Variant account! Just follow the link below:
+
+{{ site }}{% url 'registration_activate' activation_key %}
+
+

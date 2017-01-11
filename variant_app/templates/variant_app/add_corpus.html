@@ -1,3 +1,7 @@
+{% extends 'variant_app/base.html' %}
+
+{% block content %}
+
 <h3>Add a new corpus</h3>
 
 {% if error_messages %}
@@ -16,3 +20,5 @@
 <textarea rows="30" name="content" cols="60" placeholder="Add text here"></textarea><br />
 <input type="submit" value="Submit" />
 </form>
+
+{% endblock %}

@@ -1,4 +1,8 @@
-<h3>{{ corpus.corpus_name }}</h3>
+{% extends 'variant_app/base.html' %}
+
+{% block content %}
+
+<h4>Texts for {{ corpus.corpus_name }}</h4>
 
 <a href="{% url 'variant_app:add_text' corpus.id %}">Add a new text!</a>
 
@@ -9,3 +13,5 @@
   {% endfor %}
 </ul>
 {% endif %}
+
+{% endblock %}

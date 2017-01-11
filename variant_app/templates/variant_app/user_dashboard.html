@@ -1,4 +1,10 @@
+{% extends 'variant_app/base.html' %}
+
+{% block content %}
+
 <a href="{% url 'variant_app:add_corpus' %}">Add a new corpus!</a>
+
+<h4>Your corpuses:</h4>
 
 {% if corpuses %}
 <ul>
@@ -7,3 +13,5 @@
   {% endfor %}
 </ul>
 {% endif %}
+
+{% endblock %}

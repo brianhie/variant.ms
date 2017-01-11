@@ -24,4 +24,5 @@ urlpatterns = [
     url(r'^variant/', include('variant_app.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^accounts/', include('registration.backends.hmac.urls')), # From django-registration.
+    url(r'^accounts/profile/$', RedirectView.as_view(pattern_name='variant_app:user_home', permanent=False)),
 ]

@@ -1,0 +1,12 @@
+{% extends 'variant_app/base.html' %}
+{% block content %}
+
+{% if user.is_authenticated %}
+<p><a href="{% url 'variant_app:user_home' %}">View your corpuses</a></p>
+{% endif %}
+
+<p>
+  Web development is fun and not tedious at all!
+</p>
+
+{% endblock %}

@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
+
 @python_2_unicode_compatible
 class Corpus(models.Model):
     corpus_name = models.CharField(max_length=100)
@@ -71,3 +72,4 @@ class Token(models.Model):
 
     def __str__(self):
         return self.text.text_name + '_' + str(self.seq)
+

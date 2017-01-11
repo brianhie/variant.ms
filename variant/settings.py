@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
 
+DEFAULT_FROM_EMAIL = 'mr.ms@variant.ms'
 
 # Application definition
 
@@ -73,8 +74,8 @@ WSGI_APPLICATION = 'variant.wsgi.application'
 
 # Registration (from django-registration).
 # https://django-registration.readthedocs.io
-ACCOUNT_ACTIVATION_DAYS = 7 # One-week activation window.
-
+REGISTRATION_OPEN = True
+ACCOUNT_ACTIVATION_DAYS = 2
 
 
 # Database
