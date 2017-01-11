@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
@@ -49,6 +50,7 @@ class Text(models.Model):
     text_name = models.CharField(max_length=100)
     corpus = models.ForeignKey(Corpus, on_delete=models.CASCADE)
     is_base = models.BooleanField(default=False)
+    date = models.DateField(null=True, default=None)
 
     def __str__(self):
         return self.text_name

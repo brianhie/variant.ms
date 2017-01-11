@@ -18,11 +18,13 @@ from django.contrib import admin
 from django.views.generic import RedirectView
 
 from variant_app.views import index
+from variant_app.registration_views import VariantRegistrationView
 
 urlpatterns = [
     url(r'^$', index, name='home'),
     url(r'^variant/', include('variant_app.urls')),
     url(r'^admin/', admin.site.urls),
-    url(r'^accounts/', include('registration.backends.hmac.urls')), # From django-registration.
     url(r'^accounts/profile/$', RedirectView.as_view(pattern_name='variant_app:user_home', permanent=False)),
+    url(r'^accounts/register/$', VariantRegistrationView.as_view(), name='registration_register'),
+    url(r'^accounts/', include('registration.backends.hmac.urls')), # From django-registration.
 ]

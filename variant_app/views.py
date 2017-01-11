@@ -5,8 +5,8 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerEr
 from django.shortcuts import get_object_or_404, render
 from django.template import loader
 from django.urls import reverse
-import re
 import json
+import re
 
 from .models import Corpus, CollText, Text
 from .forms import RegistrationForm
@@ -19,21 +19,6 @@ def user_home(request):
     corpuses = Corpus.objects.all()
     context = { 'corpuses': corpuses }
     return render(request, 'variant_app/user_dashboard.html', context)
-
-##################
-## Registration ##
-##################
-
-def change_password(request):
-    if request.method == 'POST':
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            return HttpResponseRedirect(reverse('variant_app:index'))
-    else:
-        form = RegistrationForm()
-
-    return render(request, 'registration/registration_form.html',
-                  { 'form': form })
 
 ############
 ## Corpus ##
