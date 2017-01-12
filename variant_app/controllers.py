@@ -32,7 +32,6 @@ def create_text(corpus, text_name, content):
         text.is_base = True
         text.save()
         return text
-
     collate(coll_text, tokens)
     return text
 
@@ -61,7 +60,6 @@ def tokenize(text, content):
         token = Token(word=word,
                       corpus=text.corpus,
                       text=text,
-                      coll_token=None, # Assigned in collate() below.
                       seq=seq)
         tokens.append(token)
     return tokens
@@ -75,14 +73,20 @@ def init_coll_text(corpus, base_tokens):
     coll_text = CollText(corpus=corpus)
     coll_text.save()
 
+    coll_tokens = []
+    tokens = []
     for seq, token in enumerate(base_tokens):
         coll_token = CollToken(word=token.word,
                                seq=seq,
                                corpus=corpus,
                                coll_text=coll_text)
-        coll_token.save()
-        token.coll_token = coll_token
-        token.save()
+        coll_tokens.append(coll_token)
+        token.coll_token_seq = seq
+        token.is_base = True
+        tokens.append(token)
+
+    CollToken.objects.bulk_create(coll_tokens)
+    Token.objects.bulk_create(tokens)
     
     return coll_text
 
@@ -129,50 +133,27 @@ def _token_similarity(a, b):
     return jf.jaro_winkler(a.word, b.word) > 0.8
 
 
-@transaction.atomic
+#@transaction.atomic
 def collate(coll_text, tokens):
     try:
+        print('starting!')
         coll_tokens = CollToken.objects.filter(coll_text__id=coll_text.id)
+        print('finally finished!')
     except CollToken.DoesNotExist:
         sys.stderr.write('No coll tokens for corpus ' + str(coll_text.corpus.id) + '\n')
         return
 
-    link_prev = []
-    coll_iter = vc.collate(coll_tokens, tokens, _token_similarity)
-    for coll_token, token, status in coll_iter:
+    coll_token_seq = 0
+    for coll_token, token, status in vc.collate(coll_tokens, tokens, _token_similarity):
+        print(coll_token_seq)
         if status == 'match':
-            # Link token to the coll token.
-            token.coll_token = coll_token
-            token.is_base = True
-            token.save()
-            # Also link inserted tokens.
-            for to_link in link_prev:
-                to_link.coll_token = coll_token
-                to_link.is_base = True
-                to_link.save()
-                link_prev = []
+            token.coll_token_seq = coll_token_seq
+            coll_token_seq += 1
         elif status == 'delete':
-            # No new tokens need to be linked.
-            if coll_token:
-                for to_link in link_prev:
-                    to_link.coll_token = coll_token
-                    to_link.is_base = True
-                    to_link.save()
-                link_prev = []
+            coll_token_seq += 1
         elif status == 'insert':
-            # Inserted tokens map to first coll token.
-            # (This loops iterates backwards through the texts.)
-            link_prev.append(token)
+            token.coll_token_seq = coll_token_seq
         else:
             assert(False)
 
-    try:
-        coll_token = CollToken.objects.get(coll_text=coll_text, seq=0)
-        for to_link in link_prev:
-            to_link.coll_token = coll_token
-            to_link.is_base = True
-            to_link.save()
-    except CollToken.DoesNotExist:
-        pass
-
-
+    Token.objects.bulk_create(tokens)

@@ -43,12 +43,12 @@ function _content_in_elem(elem_id, content_json) {
 		    "class=\"seq" + seq + "\">" + word + "</span>");
     }
     text_elem.innerHTML = content;
-    _load_base();
 }
 
 function _display_content(responseText) {
     var content_json = JSON.parse(responseText);
     _content_in_elem("text", content_json);
+    _load_base();
 }
 
 function _load_base() {

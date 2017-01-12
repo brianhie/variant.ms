@@ -69,7 +69,7 @@ class Text(models.Model):
 class Token(models.Model):
     corpus = models.ForeignKey(Corpus, on_delete=models.CASCADE, default=None)
     text = models.ForeignKey(Text, on_delete=models.CASCADE, default=None)
-    coll_token = models.ForeignKey(CollToken, on_delete=models.CASCADE, default=None)
+    coll_token_seq = models.IntegerField(default=-1)
     word = models.TextField(default='')
     seq = models.IntegerField(default=-1)
     is_base = models.BooleanField(default=False)

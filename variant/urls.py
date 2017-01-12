@@ -27,4 +27,5 @@ urlpatterns = [
     url(r'^accounts/profile/$', RedirectView.as_view(pattern_name='variant_app:user_home', permanent=False)),
     url(r'^accounts/register/$', VariantRegistrationView.as_view(), name='registration_register'),
     url(r'^accounts/', include('registration.backends.hmac.urls')), # From django-registration.
+    url(r'^silk/', include('silk.urls', namespace='silk')), # From django-silk
 ]

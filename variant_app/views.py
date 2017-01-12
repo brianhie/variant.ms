@@ -110,7 +110,7 @@ def text_content(request, text_id):
     for token in text.tokens().order_by('seq'):
         token_meta = {}
         token_meta['word'] = token.word
-        token_meta['seq'] = token.coll_token.seq
+        token_meta['seq'] = token.coll_token_seq
         text_meta['tokens'].append(token_meta)
 
     return HttpResponse(json.dumps(text_meta))
