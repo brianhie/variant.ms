@@ -5,7 +5,9 @@ from django.utils.encoding import python_2_unicode_compatible
 
 @python_2_unicode_compatible
 class Corpus(models.Model):
+    user = models.ForeignKey(User, null=True, default=None, on_delete=models.CASCADE)
     corpus_name = models.CharField(max_length=100)
+    is_public = models.BooleanField(default=False)
 
     def __str__(self):
         return self.corpus_name

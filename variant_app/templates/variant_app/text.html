@@ -1,11 +1,23 @@
 {% extends 'variant_app/base.html' %}
-
 {% block content %}
+{% load static %}
 
-<p style="white-space: pre">
-{% if content %}
-{{content}}
+<script src="{% static 'variant_app/text.js' %}"></script>
+<script>
+  text_visualization("{% url 'variant_app:text_content' text.id %}",
+                     "{% url 'variant_app:text_content' base_text.id %}",
+                     "{{ text.corpus.id }}");
+</script>
+
+{% if user.is_anonymous %}
+{% include "registration/unregistered_warning.html" %}
 {% endif %}
-</p>
+
+<div>
+<div id="text" style="white-space: pre-wrap; padding-left: 20%; max-width:50%;"></div>
+
+<div id="base_text" style="white-space: pre-wrap;"></div>
+</div>
+
 
 {% endblock %}

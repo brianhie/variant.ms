@@ -1,16 +1,35 @@
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
 from django.template.loader import render_to_string
 from registration import signals
 from registration.backends.hmac.views import RegistrationView
+
+from .models import Corpus
 
 class VariantRegistrationView(RegistrationView):
     """
     Custom implementation of django-registration RegistrationView.
     """
 
+    @transaction.atomic
     def register(self, form):
+        if not self.request.user.is_anonymous:
+            return HttpResponseRedirect(reverse('registration_complete'))
+
         new_user = self.create_inactive_user(form)
+
+        # Handle corpuses that may have been created during
+        # an initial anonymous session.
+        if 'anon_corpus_ids' in self.request.session:
+            for pk in self.request.session['anon_corpus_ids']:
+                try:
+                    corpus = Corpus.objects.get(pk=pk, user=None)
+                except Corpus.DoesNotExist:
+                    continue
+                corpus.user = new_user
+                corpus.save()
+
         signals.user_registered.send(sender=self.__class__,
                                      user=new_user,
                                      request=self.request)

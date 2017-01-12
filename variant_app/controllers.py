@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 from django.db import transaction
 import jellyfish as jf
 import re

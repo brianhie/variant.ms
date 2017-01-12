@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^corpus/post$', views.create_corpus, name='create_corpus'),
 
     url(r'^text/(?P<text_id>[0-9]+)/$', views.text, name='text'),
+    url(r'^text/(?P<text_id>[0-9]+)/content$', views.text_content, name='text_content'),
     url(r'^text/(?P<corpus_id>[0-9]+)/add/$', views.add_text, name='add_text'),
     url(r'^text/(?P<corpus_id>[0-9]+)/post/$', views.create_text, name='create_text'),
 ]

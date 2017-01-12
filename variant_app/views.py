@@ -1,7 +1,7 @@
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError
 from django.shortcuts import get_object_or_404, render
 from django.template import loader
 from django.urls import reverse
@@ -16,7 +16,20 @@ def index(request):
     return render(request, 'variant_app/index.html', {})
 
 def user_home(request):
-    corpuses = Corpus.objects.all()
+    if request.user.is_anonymous:
+        if 'anon_corpus_ids' in request.session:
+            corpus_ids = request.session['anon_corpus_ids']
+            corpuses = []
+            for pk in corpus_ids:
+                try:
+                    corpuses.append(Corpus.objects.get(pk=pk))
+                except Corpus.DoesNotExist:
+                    continue
+        else:
+            corpuses = []
+    else:
+        corpuses = Corpus.objects.filter(user=request.user)
+
     context = { 'corpuses': corpuses }
     return render(request, 'variant_app/user_dashboard.html', context)
 
@@ -27,11 +40,11 @@ def user_home(request):
 def corpus(request, corpus_id):
     corpus = get_object_or_404(Corpus, pk=corpus_id)
     try:
-        coll_text = CollText.objects.get(corpus__id=corpus_id)
+        coll_text = CollText.objects.get(corpus=corpus)
     except CollText.DoesNotExist:
         coll_text = None
     try:
-        texts = Text.objects.filter(corpus__id=corpus_id)
+        texts = Text.objects.filter(corpus=corpus)
     except Text.DoesNotExist:
         texts = []
     context = { 'corpus': corpus, 'coll_text': coll_text, 'texts': texts }
@@ -54,9 +67,21 @@ def create_corpus(request):
         return render(request, 'variant_app/add_corpus.html',
                       { 'error_messages': emsg })
 
-    controllers.create_corpus(name, content)
+    corpus = controllers.create_corpus(name, content)
 
-    return HttpResponseRedirect(reverse('variant_app:index'))
+    # Handle corpus creation for anonymous user sessions.
+    if request.user.is_anonymous:
+        if 'anon_corpus_ids' in request.session:
+            prev_ids = request.session['anon_corpus_ids']
+        else:
+            prev_ids = []
+        prev_ids.append(corpus.id)
+        request.session['anon_corpus_ids'] = prev_ids
+    else:
+        corpus.user = request.user
+        corpus.save()
+
+    return HttpResponseRedirect(reverse('variant_app:user_home'))
 
 ##########
 ## Text ##
@@ -64,13 +89,31 @@ def create_corpus(request):
 
 def text(request, text_id):
     text = get_object_or_404(Text, pk=text_id)
-    data =  serializers.serialize('json', text.tokens())
-    json_data = json.loads(data)
-    content = ''
-    for d in json_data:
-        content += d['fields']['word']
-    context = { 'data': data, 'content': content }
+    base_text = get_object_or_404(Text, corpus=text.corpus, is_base=True)
+    context = { 'text': text, 'base_text': base_text }
     return render(request, 'variant_app/text.html', context)
+
+def text_content(request, text_id):
+    text = get_object_or_404(Text, pk=text_id)
+    if (not text.corpus.id in request.session['anon_corpus_ids'] and
+        text.corpus.user != request.user and
+        not text.corpus.is_public):
+        return HttpResponseNotFound('Text not found or you do not have permissions to view this file.')
+
+    text_meta = {}
+    text_meta['name'] = text.text_name
+    if text.date:
+        text_meta['date'] = text.date.strftime('%m/%d/%Y')
+    else:
+        text_meta['date'] = None
+    text_meta['tokens'] = []
+    for token in text.tokens().order_by('seq'):
+        token_meta = {}
+        token_meta['word'] = token.word
+        token_meta['seq'] = token.coll_token.seq
+        text_meta['tokens'].append(token_meta)
+
+    return HttpResponse(json.dumps(text_meta))
 
 def add_text(request, corpus_id):
     corpus = get_object_or_404(Corpus, pk=corpus_id)
@@ -92,7 +135,6 @@ def create_text(request, corpus_id):
         return render(request, 'variant_app/add_text.html',
                       { 'corpus': corpus,
                         'error_messages': emsg })
-
 
     controllers.create_text(corpus, text_name, content)
 

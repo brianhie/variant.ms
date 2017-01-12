@@ -2,6 +2,10 @@
 
 {% block content %}
 
+{% if user.is_anonymous %}
+{% include "registration/unregistered_warning.html" %}
+{% endif %}
+
 <h4>Texts for {{ corpus.corpus_name }}</h4>
 
 <a href="{% url 'variant_app:add_text' corpus.id %}">Add a new text!</a>
