@@ -10,6 +10,8 @@
 
 <a href="{% url 'variant_app:add_text' corpus.id %}">Add a new text!</a>
 
+<p><a href="{% url 'variant_app:coll_text' corpus.id %}">View the collated text</a></p>
+
 {% if texts %}
 <ul>
   {% for text in texts %}

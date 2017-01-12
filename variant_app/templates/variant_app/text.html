@@ -2,6 +2,14 @@
 {% block content %}
 {% load static %}
 
+<style>
+span[class^="seq"] {
+    line-height: 25px;
+    cursor: default;
+}
+
+</style>
+
 <script src="{% static 'variant_app/text.js' %}"></script>
 <script>
   text_visualization("{% url 'variant_app:text_content' text.id %}",
@@ -13,8 +21,11 @@
 {% include "registration/unregistered_warning.html" %}
 {% endif %}
 
-<div>
-<div id="text" style="white-space: pre-wrap; padding-left: 20%; max-width:50%;"></div>
+<button type="button" onclick="load_base();">Compare with base text</button> 
+
+<div id="wrapper" 
+     style="margin: auto; width: 40%; font-family: 'Lora', serif; font-size: 17px; color: #333; ">
+<div id="text" style="white-space: pre-wrap;"></div>
 
 <div id="base_text" style="white-space: pre-wrap;"></div>
 </div>

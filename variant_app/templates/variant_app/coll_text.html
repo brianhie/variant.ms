@@ -1,0 +1,29 @@
+{% extends 'variant_app/base.html' %}
+{% block content %}
+{% load static %}
+
+<style>
+span[class^="seq"] {
+    line-height: 25px;
+    cursor: default;
+}
+</style>
+
+<script src="{% static 'variant_app/coll_text.js' %}"></script>
+<script>
+  coll_text_visualization("{% url 'variant_app:coll_text_content' corpus.id %}",
+                          "{% url 'variant_app:coll_text_tokens' corpus.id 0 %}",
+                          "{{ text.corpus.id }}");
+</script>
+
+{% if user.is_anonymous %}
+{% include "registration/unregistered_warning.html" %}
+{% endif %}
+
+<div style="margin-left: 20%; font-family: 'Lora', serif; font-size: 17px; color: #333; ">
+<div id="text" style="width: 40%; white-space: pre-wrap; float: left; "></div>
+<div id="annotation" style="width: 20%; float: left;"></div>
+</div>
+
+
+{% endblock %}

@@ -8,7 +8,7 @@ from django.urls import reverse
 import json
 import re
 
-from .models import Corpus, CollText, Text
+from .models import Corpus, CollText, Text, Token
 from .forms import RegistrationForm
 import controllers
 
@@ -59,7 +59,7 @@ def create_corpus(request):
     content = request.POST['content'].strip()
 
     emsg = name_error_message(name)
-    if Corpus.objects.filter(corpus_name=name).exists():
+    if Corpus.objects.filter(user=request.user, corpus_name=name).exists():
         emsg.append('This name is already in use.')
     if content == '':
         emsg.append('Content cannot be empty.')
@@ -82,6 +82,52 @@ def create_corpus(request):
         corpus.save()
 
     return HttpResponseRedirect(reverse('variant_app:user_home'))
+
+###############
+## Coll Text ##
+###############
+
+def coll_text(request, corpus_id):
+    coll_text = get_object_or_404(CollText, corpus__id=corpus_id)
+    corpus = get_object_or_404(Corpus, pk=corpus_id)
+    context = { 'corpus': corpus, 'coll_text': coll_text }
+    return render(request, 'variant_app/coll_text.html', context)
+
+def coll_text_content(request, corpus_id):
+    coll_text = get_object_or_404(CollText, corpus__id=corpus_id)
+
+    text_meta = {}
+    text_meta['tokens'] = []
+    for token in coll_text.tokens().order_by('seq'):
+        token_meta = {}
+        token_meta['word'] = token.word
+        token_meta['seq'] = token.seq
+        text_meta['tokens'].append(token_meta)
+
+    return HttpResponse(json.dumps(text_meta))
+
+def coll_text_tokens(request, corpus_id, seq):
+    tokens = Token.objects.filter(corpus__id=corpus_id, coll_token_seq=seq).order_by('text', 'seq')
+    print(tokens)
+    meta = {}
+    meta['tokens'] = []
+    prev_token = None
+    prev_word = ''
+    for token in tokens:
+        if prev_token == None:
+            prev_token = token
+            prev_word = token.word
+        if prev_token.text != token.text:
+            meta['tokens'].append({ 'word': prev_word,
+                                    'text_name': prev_token.text.text_name,
+                                    'is_base': prev_token.is_base })
+            prev_token = token
+            prev_word = token.word
+    if prev_token != None:
+        meta['tokens'].append({ 'word': prev_word,
+                                'text_name': prev_token.text.text_name,
+                                'is_base': prev_token.is_base })
+    return HttpResponse(json.dumps(meta))
 
 ##########
 ## Text ##
