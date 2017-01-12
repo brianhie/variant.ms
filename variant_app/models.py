@@ -41,7 +41,7 @@ class CollToken(models.Model):
 
     def tokens(self):
         try:
-            tokens = Token.objects.filter(coll_token__id=self.id).order_by('text__text_name', 'seq')
+            tokens = Token.objects.filter(coll_token_seq=self.seq, corpus=self.corpus).order_by('text__text_name', 'seq')
         except Token.DoesNotExist:
             tokens = []
         return tokens

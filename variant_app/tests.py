@@ -91,11 +91,11 @@ class VariantAppTests(TestCase):
 
     def test_HSDeath(self):
         corpus_dir = os.path.expanduser('~/variant.ms/variant_app/data/Donne_HSDeath')
-        #self.full_corpus(corpus_dir)
+        self.full_corpus(corpus_dir)
 
     def test_Sat3(self):
         corpus_dir = os.path.expanduser('~/variant.ms/variant_app/data/Donne_Sat3')
-        #self.full_corpus(corpus_dir)
+        self.full_corpus(corpus_dir)
         
     def full_corpus(self, corpus_dir):
         corpus_id = 'Donne_HSDeath'

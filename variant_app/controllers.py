@@ -45,7 +45,7 @@ def _split(content):
         if a.strip() == '':
             yield a
             continue
-        for b in re.split(ur'([\.?!,:;\-–—―=…\}\]\)\"”’]+$|^[\{\[\(\"“‘]+)',
+        for b in re.split(ur'([\.?!,:;\-–—―—=…\}\]\)\"”’]+$|^[\{\[\(\"“‘]+)',
                           a, re.UNICODE):
             if b != '':
                 yield b
@@ -136,24 +136,34 @@ def _token_similarity(a, b):
 #@transaction.atomic
 def collate(coll_text, tokens):
     try:
-        print('starting!')
-        coll_tokens = CollToken.objects.filter(coll_text__id=coll_text.id)
-        print('finally finished!')
+        coll_tokens = CollToken.objects.filter(coll_text__id=coll_text.id).order_by('seq')
     except CollToken.DoesNotExist:
         sys.stderr.write('No coll tokens for corpus ' + str(coll_text.corpus.id) + '\n')
         return
 
-    coll_token_seq = 0
-    for coll_token, token, status in vc.collate(coll_tokens, tokens, _token_similarity):
-        print(coll_token_seq)
+    coll_token_prev = None
+    head = None
+    for coll_token, token, status in vc.collate(coll_tokens, tokens,
+                                                _token_similarity):
         if status == 'match':
-            token.coll_token_seq = coll_token_seq
-            coll_token_seq += 1
+            token.coll_token_seq = coll_token.seq
+            if head != None:
+                head.coll_token_seq = coll_token.seq
+                head = None
+            coll_token_prev = coll_token
         elif status == 'delete':
-            coll_token_seq += 1
+            if head != None:
+                head.coll_token_seq = coll_token.seq
+                head = None
+            coll_token_prev = coll_token
         elif status == 'insert':
-            token.coll_token_seq = coll_token_seq
+            if coll_token_prev:
+                token.coll_token_seq = coll_token_prev.seq
+            else:
+                head = token
         else:
             assert(False)
+    if head != None and coll_token:
+        head.coll_token_seq = coll_token.seq
 
     Token.objects.bulk_create(tokens)
