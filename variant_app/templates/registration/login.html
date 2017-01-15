@@ -1,31 +1,40 @@
 {% extends 'variant_app/base.html' %}
 
 {% block content %}
+<div class="container">
 
-<h3>Login</h3>
+  <h2 class="text_title sans_font"
+      style="font-size: 35px; font-weight: normal;">Login to your Variant account</h2>
 
-{% if form.errors %}
-<p>We couldn't log you in. Please check your username and password and try again. </p>
-{% endif %}
+  <form class="form sans_font" method="post" action="{% url 'auth_login' %}">
+    {% csrf_token %}
 
-<form method="post" action="{% url 'auth_login' %}">
-{% csrf_token %}
-<table>
-<tr>
-    <td>{{ form.username.label_tag }}</td>
-    <td>{{ form.username }}</td>
-</tr>
-<tr>
-    <td>{{ form.password.label_tag }}</td>
-    <td>{{ form.password }}</td>
-</tr>
-</table>
+    {% if form.errors %}
+    <p class="error">We couldn&rsquo;t log you in. Please check your username and password and try again. </p>
+    {% endif %}
 
-<input type="submit" value="Login" />
-<input type="hidden" name="next" value="{{ next }}" />
-</form>
+    <table>
+      <tr>
+	<td style="padding-bottom: 20px;">{{ form.username.label_tag }}</td>
+	<td style="padding-bottom: 20px;">{{ form.username }}</td>
+      </tr>
+      <tr>
+	<td style="padding-bottom: 20px;">{{ form.password.label_tag }}</td>
+	<td style="padding-bottom: 20px;">{{ form.password }}</td>
+      </tr>
+    </table>
 
-<p><a href="{% url 'registration_register' %}">Register</a></p>
-<p><a href="{% url 'auth_password_reset' %}">Lost password?</a></p>
+    <div style="display:inline-block;"><div class="underline">
+	<input class="sans_font" type="submit" value="Login" />
+    </div></div>
 
+    <input type="hidden" name="next" value="{{ next }}" />
+  </form>
+
+  <div class="top_elem sans_font">
+    <a style="font-size: 20px;"
+       href="{% url 'auth_password_reset' %}">Lost password?</a>
+  </div>
+
+</div>
 {% endblock %}

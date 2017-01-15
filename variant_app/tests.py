@@ -111,7 +111,7 @@ class VariantAppTests(TestCase):
         if base_provided:
             base_text_id = re.sub('\.txt$', '', default_base_fname.split('/')[-1])
             content = open(corpus_dir + '/' + default_base_fname).read()
-            create_text(corpus, base_text_id, content)
+            create_text(corpus, base_text_id, content, debug=True)
     
         # Repeatedly collate all files in directory.
         for pos, text_fname in enumerate(listdir):
@@ -119,12 +119,12 @@ class VariantAppTests(TestCase):
             if not base_provided:
                 # If base.txt is not provided, use first file in directory.
                 content = open(corpus_dir + '/' + default_base_fname).read()
-                create_text(corpus, text_id, content)
+                create_text(corpus, text_id, content, debug=True)
                 continue
             elif text_id == base_text_id:
                 continue
             content = open(corpus_dir + '/' + text_fname).read()
-            create_text(corpus, text_id, content)
+            create_text(corpus, text_id, content, debug=True)
             end = time.time()
             sys.stdout.write('\r' + str(round(pos/float(len(listdir))*100, 1))
                              + '%, ' + str(round(end - start, 1)) + 's\033[K')

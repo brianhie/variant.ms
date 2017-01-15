@@ -1,23 +1,37 @@
 {% extends 'variant_app/base.html' %}
 
 {% block content %}
+<div class="container">
 
-{% if user.is_anonymous %}
-{% include "registration/unregistered_warning.html" %}
-{% endif %}
+  {% if user.is_anonymous %}
+  {% include "registration/unregistered_warning.html" %}
+  {% endif %}
 
-<h4>Texts for {{ corpus.corpus_name }}</h4>
+  <div class="top_elem sans_font">
+    <a  style="font-size: 18px;" href="{% url 'variant_app:user_home' %}">Back to home</a>
+  </div>
 
-<a href="{% url 'variant_app:add_text' corpus.id %}">Add a new text!</a>
+  <h2 class="subheader sans_font">{{ corpus.corpus_name }}</h2>
 
-<p><a href="{% url 'variant_app:coll_text' corpus.id %}">View the collated text</a></p>
+  <div class="elem text_font coll_color">
+    <a href="{% url 'variant_app:coll_text' corpus.id %}">View the collated text</a>
+  </div>
+  <br style="margin: 60px;" />
 
-{% if texts %}
-<ul>
-  {% for text in texts %}
-  <li><a href="{% url 'variant_app:text' text.id %}">{{ text.text_name }}</a></li>
-  {% endfor %}
-</ul>
-{% endif %}
+  <div class="top_elem sans_font">
+    <a href="{% url 'variant_app:add_text' corpus.id %}">+ Add a variant</a>
+  </div>
+
+  {% if texts %}
+  <ul class="elem_list text_font">
+    {% for text in texts %}
+    <li class="elem variant_color">
+      <a href="{% url 'variant_app:text' text.id %}">{{ text.text_name }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+</div>
 
 {% endblock %}

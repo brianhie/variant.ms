@@ -2,33 +2,43 @@
 {% block content %}
 {% load static %}
 
-<style>
-span[class^="seq"] {
+<div class="coll_text_container" id="contain">
+
+  <style>
+    span[class^="seq"] {
     line-height: 25px;
     cursor: default;
-}
+    }
 
-</style>
+  </style>
 
-<script src="{% static 'variant_app/text.js' %}"></script>
-<script>
-  text_visualization("{% url 'variant_app:text_content' text.id %}",
-                     "{% url 'variant_app:text_content' base_text.id %}",
-                     "{{ text.corpus.id }}");
-</script>
+  <script src="{% static 'variant_app/text.js' %}"></script>
+  <script>
+    text_visualization("{% url 'variant_app:text_content' text.id %}",
+    "{% url 'variant_app:text_content' base_text.id %}",
+    "{{ text.corpus.id }}");
+  </script>
 
-{% if user.is_anonymous %}
-{% include "registration/unregistered_warning.html" %}
-{% endif %}
+  {% if user.is_anonymous %}
+  {% include "registration/unregistered_warning.html" %}
+  {% endif %}
 
-<button type="button" onclick="load_base();">Compare with base text</button> 
+  <div class="top_elem sans_font">
+    <a style="font-size: 20px;"
+       href="{% url 'variant_app:corpus' text.corpus.id %}">Back to text home</a>
+  </div>
+  <div class="top_elem sans_font">
+    <button class="top_elem sans_font"
+	    type="button" onclick="load_base();">Compare with base text</button> 
+  </div>
 
-<div id="wrapper" 
-     style="margin: auto; width: 40%; font-family: 'Lora', serif; font-size: 17px; color: #333; ">
-<div id="text" style="white-space: pre-wrap;"></div>
+  <h2 style="padding-left: 20px;" 
+      class="text_title title_font">{{ text.text_name }}</h2>
 
-<div id="base_text" style="white-space: pre-wrap;"></div>
+  <div id="wrapper">
+    <div id="text" class="text text_font"></div>
+    <div id="base_text" style="white-space: pre-wrap; display: inline-table;" class="text text_font"></div>
+  </div>
 </div>
-
 
 {% endblock %}

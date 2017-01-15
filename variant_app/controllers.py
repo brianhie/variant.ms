@@ -10,7 +10,7 @@ import variant_collate as vc
 from models import Corpus, CollText, Text, CollToken, Token
 
 
-@transaction.atomic
+#@transaction.atomic
 def create_corpus(corpus_name, content):
     corpus = Corpus(corpus_name=corpus_name)
     corpus.save()
@@ -20,7 +20,7 @@ def create_corpus(corpus_name, content):
     return corpus
 
 @transaction.atomic
-def create_text(corpus, text_name, content):
+def create_text(corpus, text_name, content, debug=False):
     text = Text(text_name=text_name, corpus=corpus)
     text.save()
     tokens = tokenize(text, content)
@@ -32,13 +32,8 @@ def create_text(corpus, text_name, content):
         text.is_base = True
         text.save()
         return text
-    collate(coll_text, tokens)
+    collate(coll_text, tokens, debug=debug)
     return text
-
-
-######################################
-## Helper functions for tokenize(). ##
-######################################
 
 def _split(content):
     for a in re.split(r'(\s+)', content):
@@ -64,11 +59,7 @@ def tokenize(text, content):
         tokens.append(token)
     return tokens
 
-##############################################
-## Helper functions for create_coll_text(). ##
-##############################################
-
-#@transaction.atomic
+@transaction.atomic
 def init_coll_text(corpus, base_tokens):
     coll_text = CollText(corpus=corpus)
     coll_text.save()
@@ -90,10 +81,6 @@ def init_coll_text(corpus, base_tokens):
     
     return coll_text
 
-#####################################
-## Helper functions for collate(). ##
-#####################################
-
 def _isspace(s):
     return s.strip() == ''
 
@@ -101,69 +88,70 @@ def _ispunc(s):
     return s.rstrip(string.punctuation) == ''
 
 def _token_similarity(a, b):
-    # Strings are a case insensitive match.
-    # Match any whitespace to any whitespace.
-    if a.word.lower().strip() == b.word.lower().strip():
-        return True
+    return _token_similarity_score(a.word, b.word) > 0.8
 
-    # Make it impossible for words to map to whitespace.
-    if ((_isspace(a.word) and not _isspace(b.word)) or
-        (not _isspace(a.word) and _isspace(b.word))):
-        return False
+def _token_similarity_score(a, b):
+    if a == b:
+        return 1.
 
-    # Make it impossible for words to map to punctuation.
-    if _ispunc(a.word) and _ispunc(b.word):
-        return True
-    if ((_ispunc(a.word) and not _ispunc(b.word)) or
-        (not _ispunc(a.word) and _ispunc(b.word))):
-        return False
+    if a.lower().strip() == b.lower().strip():
+        return 0.95
+
+    # Penalize whitespace matching to non-whitespace.
+    if ((_isspace(a) and not _isspace(b)) or
+        (not _isspace(a) and _isspace(b))):
+        return 0
+
+    # Penalize punctuation matching to non-punctuation.
+    if _ispunc(a) and _ispunc(b):
+        return 0.95
+    if ((_ispunc(a) and not _ispunc(b)) or
+        (not _ispunc(a) and _ispunc(b))):
+        return 0
 
     # Strings sound alike (approximate phonetic match).
-    if a.word.isalpha() and b.word.isalpha():
-        if jf.metaphone(a.word) == jf.metaphone(b.word):
-            return True
-        if jf.soundex(a.word) == jf.soundex(b.word):
-            return True
-        if jf.nysiis(a.word) == jf.nysiis(b.word):
-            return True
-        if jf.match_rating_codex(a.word) == jf.match_rating_codex(b.word):
-            return True
+    a_alpha = u''.join([ c for c in a if c.isalpha() ])
+    b_alpha = u''.join([ c for c in b if c.isalpha() ])
+    if jf.match_rating_comparison(a_alpha, b_alpha):
+        return 0.9
+    if jf.metaphone(a_alpha) == jf.metaphone(b_alpha):
+        return 0.9
+    if jf.soundex(a_alpha) == jf.soundex(b_alpha):
+        return 0.9
+    if jf.nysiis(a_alpha) == jf.nysiis(b_alpha):
+        return 0.9
 
     # Use scaled Jaro-Winkler distance.
-    return jf.jaro_winkler(a.word, b.word) > 0.8
+    return jf.jaro_winkler(a, b)
 
-
-#@transaction.atomic
-def collate(coll_text, tokens):
+@transaction.atomic
+def collate(coll_text, tokens, debug=False):
     try:
         coll_tokens = CollToken.objects.filter(coll_text__id=coll_text.id).order_by('seq')
     except CollToken.DoesNotExist:
         sys.stderr.write('No coll tokens for corpus ' + str(coll_text.corpus.id) + '\n')
         return
 
-    coll_token_prev = None
-    head = None
+    coll_token_seq = 0
+    coll_token_prev_seq = -1
     for coll_token, token, status in vc.collate(coll_tokens, tokens,
                                                 _token_similarity):
         if status == 'match':
+            if debug:
+                assert(coll_token.seq == coll_token_seq)
             token.coll_token_seq = coll_token.seq
-            if head != None:
-                head.coll_token_seq = coll_token.seq
-                head = None
-            coll_token_prev = coll_token
+            coll_token.variability += jf.jaro_winkler(coll_token.word, token.word)
+            coll_token.save()
+            coll_token_prev_seq = coll_token.seq
+            coll_token_seq += 1
         elif status == 'delete':
-            if head != None:
-                head.coll_token_seq = coll_token.seq
-                head = None
-            coll_token_prev = coll_token
+            if debug:
+                assert(coll_token.seq == coll_token_seq)
+            coll_token_prev_seq = coll_token.seq
+            coll_token_seq += 1
         elif status == 'insert':
-            if coll_token_prev:
-                token.coll_token_seq = coll_token_prev.seq
-            else:
-                head = token
+            token.coll_token_seq = coll_token_prev_seq
         else:
             assert(False)
-    if head != None and coll_token:
-        head.coll_token_seq = coll_token.seq
 
     Token.objects.bulk_create(tokens)

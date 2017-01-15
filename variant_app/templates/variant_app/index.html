@@ -1,6 +1,8 @@
 {% extends 'variant_app/base.html' %}
 {% block content %}
 
+<div style="margin: 0 auto; width: 50%;">
+
 {% if user.is_authenticated %}
 <p><a href="{% url 'variant_app:user_home' %}">View your corpuses</a></p>
 {% else %}
@@ -11,5 +13,5 @@
   Web development is fun and not tedious at all!
 </p>
 
-
+</div>
 {% endblock %}

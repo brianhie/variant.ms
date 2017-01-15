@@ -23,16 +23,19 @@ def collate(A, B, similarity, debug=False):
     for r in result:
         yield r
 
-
+# Will print out tree of splitted arrays which is useful for debugging.
+def _debug_out(A, B, depth):
+    sys.stdout.write('\t'*depth)
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>0')
+    sys.stdout.write('\t'*depth)
+    print(A)
+    sys.stdout.write('\t'*depth)
+    print(B)
+    
+        
 def _LCS(A, B, similarity, result, depth, debug=False):
     if debug:
-        # Tree of splitted arrays which is useful for debugging.
-        sys.stdout.write('\t'*depth)
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>0')
-        sys.stdout.write('\t'*depth)
-        print(A)
-        sys.stdout.write('\t'*depth)
-        print(B)
+        _debug_out(A, B, depth)
 
     N = len(A)
     M = len(B)
@@ -53,6 +56,9 @@ def _LCS(A, B, similarity, result, depth, debug=False):
                 local_results.append((a, b, status))
             local_results.reverse()
             result += local_results
+
+            if debug:
+                _debug_out(A[u:], B[v:], depth + 1)
 
             _LCS(A[u:], B[v:], similarity, result, depth + 1, debug=debug)
 
@@ -92,7 +98,7 @@ def _middle_snake(A, B, similarity):
                 i = V_for[k-1]
                 j = x - k
             y = x - k
-            (i, j) = (x, y)
+#            (i, j) = (x, y)
             while x < N and y < M and similarity(A[x], B[y]):
                 x, y = x+1, y+1
             V_for[k] = x
@@ -113,7 +119,7 @@ def _middle_snake(A, B, similarity):
                 i = V_rev[(k+delta)+1]
                 j = x - (k+delta)
             y = x - (k+delta)
-            (i, j) = (x, y)
+#            (i, j) = (x, y)
             while x > 0 and y > 0 and similarity(A[x-1], B[y-1]):
                 x, y = x-1, y-1
             V_rev[(k+delta)] = x
@@ -123,7 +129,7 @@ def _middle_snake(A, B, similarity):
                 rev_x = V_rev[(k+delta)]
                 rev_y = rev_x - (k+delta)
                 if for_x - for_y == rev_x - rev_y and for_x >= rev_x:
-                    return D, (i, j), (x, y)
+                    return D, (x, y), (i, j)
     # Should never reach here.
     assert(False)
 
@@ -204,6 +210,6 @@ if __name__ == '__main__':
     text2 = 'A B C X'.split()
     _test(text1, text2, 'Test 2', similarity)
 
-    text1 = 'X X A B E C X X A B E C X X A B E C X X'.split()
-    text2 = 'X X G Q R B E C X X G Q R B E C X X G Q R B E C X X'.split()
+    text1 = 'X X A B E C X X A B E C X X A B E C X X A B E C X X'.split()
+    text2 = 'X X G Q R B E C X X G Q R B E C X X G Q R B E C X X G Q R B E C X X'.split()
     _test(text1, text2, 'Test 4', similarity)

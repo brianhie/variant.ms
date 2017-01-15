@@ -1,25 +1,36 @@
+{% load static %}
+
 <html>
 
   <head>
     <title>Variant - Collation in the Cloud</title>
     <link rel="stylesheet" type="text/css"
-          href="https://fonts.googleapis.com/css?family=Lora">
+	  href="https://fonts.googleapis.com/css?family=Merriweather:300|Source+Sans+Pro:300"></link>
+    <link rel="stylesheet" type="text/css"
+	  href="{% static 'variant_app/base.css' %}"></link>
+    <link rel="stylesheet" type="text/css"
+	  src="{% static 'variant_app/checkbox.css' %}"></link>
   </head>
 
   <body>
     <div class="header">
-      <h1>Variant</h1>
+      <h1 class="title title_font">Variant</h1>
 
-      <p><a href="{% url 'home' %}">Home</a></p>
+      <ul class="nav sans_font">
 
-      {% if user.is_authenticated %}
-      <p>Welcome {{ user }}!</p>
-      <p><a href="{% url 'auth_logout' %}">Logout</a></p>
-      {% else %}
-      <p><a href="{% url 'auth_login' %}">Login</a></p>
-      <p><a href="{% url 'registration_register' %}">Register</a></p>
-      {% endif %}
+	{% if user.is_authenticated %}
+	<li><a href="{% url 'variant_app:user_home' %}">My Home</a></li>
+	<li><a href="{% url 'auth_logout' %}">Logout</a></li>
+
+	{% else %}
+	<li><a href="{% url 'home' %}">Home</a></li>
+	<li><a href="{% url 'auth_login' %}">Login</a></li>
+	<li><a href="{% url 'registration_register' %}">Register</a></li>
+	{% endif %}
+
+      </ul>
     </div>
+    <br />
 
     {% block content %}
     {% endblock %}

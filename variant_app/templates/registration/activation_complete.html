@@ -1,9 +1,23 @@
 {% extends 'variant_app/base.html' %}
 
 {% block content %}
+<div class="container">
 
-<p>Congrats! Your account has been successfully activated.</p>
+  <h3 class="text_title sans_font"
+      style="font-size: 35px; font-weight: normal;">You&rsquo;re all done.</h3>
 
-<p><a href="{% url 'auth_login' %}">Login to start using Variant.</a><p>
+  <div style="padding-left: 20px;" class="sans_font">
+    <p>
+      Thanks for creating an account.  Now, just login to start using Variant!
+    </p>
+  </div>
+  
+  <br />
+
+  <div class="top_elem sans_font">
+    <a style="font-size: 20px;"
+     href="{% url 'auth_login' %}">Login</a>
+  </div>
+</div>
 
 {% endblock %}

@@ -7,6 +7,7 @@ from django.template import loader
 from django.urls import reverse
 import json
 import re
+import time
 
 from .models import Corpus, CollText, Text, Token
 from .forms import RegistrationForm
@@ -59,13 +60,15 @@ def create_corpus(request):
     content = request.POST['content'].strip()
 
     emsg = name_error_message(name)
-    if Corpus.objects.filter(user=request.user, corpus_name=name).exists():
-        emsg.append('This name is already in use.')
+    if not request.user.is_anonymous:
+        if Corpus.objects.filter(user__id=request.user.id, corpus_name=name).exists():
+            emsg.append('You entered a name that is already in use.')
     if content == '':
         emsg.append('Content cannot be empty.')
     if len(emsg) != 0:
         return render(request, 'variant_app/add_corpus.html',
-                      { 'error_messages': emsg })
+                      { 'error_messages': emsg,
+                        'entered': request.POST['content'] })
 
     corpus = controllers.create_corpus(name, content)
 
@@ -90,11 +93,17 @@ def create_corpus(request):
 def coll_text(request, corpus_id):
     coll_text = get_object_or_404(CollText, corpus__id=corpus_id)
     corpus = get_object_or_404(Corpus, pk=corpus_id)
-    context = { 'corpus': corpus, 'coll_text': coll_text }
+    try:
+        texts = Text.objects.filter(corpus__id=corpus_id)
+    except Text.DoesNotExist:
+        texts = []
+    context = { 'corpus': corpus, 'coll_text': coll_text, 'texts': texts }
     return render(request, 'variant_app/coll_text.html', context)
 
 def coll_text_content(request, corpus_id):
     coll_text = get_object_or_404(CollText, corpus__id=corpus_id)
+    num_texts = float(Text.objects.filter(corpus__id=corpus_id).count())
+    print(num_texts)
 
     text_meta = {}
     text_meta['tokens'] = []
@@ -102,31 +111,40 @@ def coll_text_content(request, corpus_id):
         token_meta = {}
         token_meta['word'] = token.word
         token_meta['seq'] = token.seq
+        if num_texts <= 1:
+            token_meta['variability'] = 1
+        else:
+            token_meta['variability'] = token.variability / (num_texts-1)
         text_meta['tokens'].append(token_meta)
 
     return HttpResponse(json.dumps(text_meta))
 
-def coll_text_tokens(request, corpus_id, seq):
-    tokens = Token.objects.filter(corpus__id=corpus_id, coll_token_seq=seq).order_by('text', 'seq')
-    print(tokens)
+def coll_text_tokens(request, corpus_id, seq_start, seq_end, seq_center):
+    print(seq_start)
+    all_tokens = Token.objects.filter(corpus__id=corpus_id,
+                                      coll_token_seq__gte=int(seq_start),
+                                      coll_token_seq__lte=int(seq_end)).order_by('text', 'seq')
     meta = {}
-    meta['tokens'] = []
-    prev_token = None
-    prev_word = ''
-    for token in tokens:
-        if prev_token == None:
-            prev_token = token
-            prev_word = token.word
-        if prev_token.text != token.text:
-            meta['tokens'].append({ 'word': prev_word,
-                                    'text_name': prev_token.text.text_name,
-                                    'is_base': prev_token.is_base })
-            prev_token = token
-            prev_word = token.word
-    if prev_token != None:
-        meta['tokens'].append({ 'word': prev_word,
-                                'text_name': prev_token.text.text_name,
-                                'is_base': prev_token.is_base })
+    meta['sequences'] = []
+    curr_text = None
+    curr_word = ''
+    tokens = []
+    for token in all_tokens:
+        word = token.word.replace('\n', ' / ')
+        if curr_text == None:
+            curr_text = token.text
+        elif curr_text != token.text:
+            meta['sequences'].append({ 'tokens': tokens,
+                                       'text_name': curr_text.text_name,
+                                       'is_base': curr_text.is_base })
+            curr_text = token.text
+            tokens = []
+        tokens.append({ 'word': word,
+                        'is_center': token.coll_token_seq == int(seq_center) })
+    if curr_text != None:
+        meta['sequences'].append({ 'tokens': tokens,
+                                   'text_name': curr_text.text_name,
+                                   'is_base': curr_text.is_base })
     return HttpResponse(json.dumps(meta))
 
 ##########
@@ -141,10 +159,10 @@ def text(request, text_id):
 
 def text_content(request, text_id):
     text = get_object_or_404(Text, pk=text_id)
-    if (not text.corpus.id in request.session['anon_corpus_ids'] and
-        text.corpus.user != request.user and
-        not text.corpus.is_public):
-        return HttpResponseNotFound('Text not found or you do not have permissions to view this file.')
+#    if (not text.corpus.id in request.session['anon_corpus_ids'] and
+#        text.corpus.user != request.user and
+#        not text.corpus.is_public):
+#        return HttpResponseNotFound('Text not found or you do not have permissions to view this file.')
 
     text_meta = {}
     text_meta['name'] = text.text_name
@@ -180,9 +198,13 @@ def create_text(request, corpus_id):
     if len(emsg) != 0:
         return render(request, 'variant_app/add_text.html',
                       { 'corpus': corpus,
-                        'error_messages': emsg })
+                        'error_messages': emsg,
+                        'entered': request.POST['content'] })
 
+    print('creating text')
     controllers.create_text(corpus, text_name, content)
+#    time.sleep(60)
+    print('done creating text')
 
     return HttpResponseRedirect(reverse('variant_app:corpus', args=(corpus.id,)))
 
@@ -197,9 +219,4 @@ def name_error_message(name):
         emsg.append('Please enter a name.')
     elif len(name) > 100:
         emsg.append('Please limit the name to less than 100 characters.')
-    else:
-        stripped_name = re.sub(r'[ \.\-_]', '', name)
-        if not stripped_name.isalnum():
-            emsg.append('You name can only contain the characters ' +
-                        '.-_ and letters, numbers, and spaces.')
     return emsg

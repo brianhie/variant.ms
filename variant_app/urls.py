@@ -16,7 +16,7 @@ urlpatterns = [
     url(r'^corpus/(?P<corpus_id>[0-9]+)/coll/$', views.coll_text, name='coll_text'),
     url(r'^corpus/(?P<corpus_id>[0-9]+)/coll/content/$', views.coll_text_content,
         name='coll_text_content'),
-    url(r'^corpus/(?P<corpus_id>[0-9]+)/coll/tokens/(?P<seq>[0-9]+)/$',
+    url(r'^corpus/(?P<corpus_id>[0-9]+)/coll/tokens/(?P<seq_start>\-?[0-9]+)/(?P<seq_end>\-?[0-9]+)/(?P<seq_center>\-?[0-9]+)/$',
         views.coll_text_tokens, name='coll_text_tokens'),
 
     url(r'^text/(?P<text_id>[0-9]+)/$', views.text, name='text'),

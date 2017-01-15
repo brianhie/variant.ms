@@ -34,11 +34,13 @@ function _content_in_elem(elem_id, content_json) {
     for (var t = 0; t < content_json.tokens.length; t++) {
 	var seq = content_json.tokens[t].seq;
 	var word = content_json.tokens[t].word;
-	content += ("<span onmouseenter=\"_hover_highlight(" + seq + ");\" " +
-		    "onmouseout=\"_hover_unhighlight(" + seq + ");\" " + 
-		    "class=\"seq" + seq + "\">" + word + "</span>");
+	var token = document.createElement("span");
+	token.className = "seq" + seq
+	token.textContent = word;
+	token.onmouseover = _hover_highlight;
+	token.onmouseout = _hover_unhighlight;
+	text_elem.appendChild(token);
     }
-    text_elem.innerHTML = content;
 }
 
 function _display_content(responseText) {
@@ -49,34 +51,34 @@ function _display_content(responseText) {
 function load_base() {
     var text_elem = document.getElementById("text");
     text_elem.style.cssFloat = "left";
-    text_elem.style.paddingRight = "15%";
-    text_elem.style.maxWidth = "40%";
+    text_elem.style.paddingRight = "0";
+    text_elem.style.width = "48%";
 
-    var wrapper = document.getElementById("wrapper");
-    wrapper.style.width = "80%";
-
+    var wrapper = document.getElementById("contain");
+    wrapper.style.width = "70%";
     _get(_display_base, base_url);
 }
 
 function _display_base(responseText) {
-
     var base_json = JSON.parse(responseText);
     var base_elem = document.getElementById("base_text");
-    base_elem.style.cssFloat = "left";
+    base_elem.style.width = "48%";
     _content_in_elem("base_text", base_json);
-    base_elem.style.maxWidth = "40%";
 }
 
-function _hover_highlight(seq) {
+function _hover_highlight(event) {
+    var seq = this.className.replace(/seq/, "");
     var words = document.getElementsByClassName("seq" + seq);
+    console.log(seq);
     for (var w = 0; w < words.length; w++) {
-	words[w].style.backgroundColor = "#bbb";
+	words[w].style.borderBottom = "black 3px solid";
     }
 }
 
-function _hover_unhighlight(seq) {
+function _hover_unhighlight(event) {
+    var seq = this.className.replace(/seq/, "");
     var words = document.getElementsByClassName("seq" + seq);
     for (var w = 0; w < words.length; w++) {
-	words[w].style.backgroundColor = "#fff";
+	words[w].style.borderBottom = "none";
     }
 }

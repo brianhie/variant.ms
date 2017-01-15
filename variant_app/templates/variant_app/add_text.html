@@ -1,24 +1,40 @@
 {% extends 'variant_app/base.html' %}
 
 {% block content %}
+<div class="container">
 
-<h3>Add a new text to {{corpus.corpus_name}}</h3>
+  <h2 class="text_title sans_font"
+      style="font-size: 35px; font-weight: normal;">Add a variant to {{ corpus.corpus_name }}</h2>
 
-{% if error_messages %}
-<ul>
-{% for msg in error_messages %}
-<li><strong>{{ msg }}</strong></li>
-{% endfor %}
-</ul>
-{% endif %}
+  {% if error_messages %}
+  <ul class="error sans_font">
+    {% for msg in error_messages %}
+    <li>{{ msg }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
 
-<form action="{% url 'variant_app:create_text' corpus.id %}" method="post">
-{% csrf_token %}
-<label>Text name</label><br />
-<input type="text" name="text_name" value="" /><br />
-<label>Content</label><br />
-<textarea rows="30" name="content" cols="60" placeholder="Add text here"></textarea><br />
-<input type="submit" value="Submit" />
-</form>
+  <form action="{% url 'variant_app:create_text' corpus.id %}"
+	class="form sans_font" method="post">
+    {% csrf_token %}
+    <label>Variant name</label>
+    <input type="text" name="text_name" value="" />
 
+    <br /><br />
+
+    <label>Text content</label><br />
+    {% if entered %}
+    <textarea rows="35" name="content">{{ entered }}</textarea>
+    {% else %}
+    <textarea rows="35" name="content" placeholder="Add content here"></textarea>
+    {% endif %}
+
+    <br /><br />
+
+    <div style="display:inline-block;"><div class="underline">
+	<input class="sans_font" type="submit" value="Collate" />
+    </div></div>
+  </form>
+
+</div>
 {% endblock %}

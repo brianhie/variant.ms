@@ -1,40 +1,44 @@
 {% extends 'variant_app/base.html' %}
 
 {% block content %}
+<div class="container">
 
-<h3>Register</h3>
+  <h2 class="text_title sans_font"
+      style="font-size: 35px; font-weight: normal;">Create an account with Variant</h2>
 
-{% if form %}
-{% if form.subject.errors %}
-<ol>
-  {% for error in form.subject.errors %}
-  <li><strong>{{ error|escape }}</strong></li>
-  {% endfor %}
-</ol>
-{% endif %}
+  {% if form %}
+  {% if form.subject.errors %}
+  <ul class="error">
+    {% for error in form.subject.errors %}
+    <li>{{ error|escape }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
 
 
-<form method="post" action=".">
-  {% csrf_token %}
+  <form method="post" action="." class="form sans_font">
+    {% csrf_token %}
 
-  {% for hidden in form.hidden_fields %}
-  {{ hidden }}
-  {% endfor %}
+    {% for hidden in form.hidden_fields %}
+    {{ hidden }}
+    {% endfor %}
 
-  {% for field in form.visible_fields %}
-  <div class="fieldWrapper">
-    {{ field.errors }}
-    {{ field.label_tag }} {{ field }}
-    {% if field.help_text %}
-    <p class="help">{{ field.help_text|safe }}</p>
-    {% endif %}
-  </div>
-  {% endfor %}
+    {% for field in form.visible_fields %}
+    <div class="fieldWrapper">
+      <div class="error">{{ field.errors }}</div>
+      {{ field.label_tag }} {{ field }}
+      {% if field.errors and field.help_text %}
+      <p class="help">{{ field.help_text|safe }}</p>
+      {% endif %}
+    </div>
+    <br />
+    {% endfor %}
+    <div style="display:inline-block;"><div class="underline">
+	<input class="sans_font" type="submit" value="Register" />
+    </div></div>
+  </form>
 
-  <input type="submit" value="Register" />
-</form>
+  {% endif %}
 
-<a href="{% url 'auth_login' %}">Login</a>
-{% endif %}
-
+</div>
 {% endblock %}
