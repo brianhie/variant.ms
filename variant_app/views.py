@@ -5,11 +5,12 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, render
 from django.template import loader
 from django.urls import reverse
+from django.views.decorators.http import require_http_methods
 import json
 import re
 import time
 
-from .models import Corpus, CollText, Text, Token
+from .models import Corpus, CollText, CollToken, Text, Token
 from .forms import RegistrationForm
 import controllers
 
@@ -86,6 +87,14 @@ def create_corpus(request):
 
     return HttpResponseRedirect(reverse('variant_app:user_home'))
 
+def delete_corpus(request, corpus_id):
+    try:
+        Corpus.objects.get(pk=corpus_id, user=request.user).delete()
+    except Corpus.DoesNotExist:
+        pass
+    
+    return HttpResponseRedirect(reverse('variant_app:user_home'))
+
 ###############
 ## Coll Text ##
 ###############
@@ -103,7 +112,6 @@ def coll_text(request, corpus_id):
 def coll_text_content(request, corpus_id):
     coll_text = get_object_or_404(CollText, corpus__id=corpus_id)
     num_texts = float(Text.objects.filter(corpus__id=corpus_id).count())
-    print(num_texts)
 
     text_meta = {}
     text_meta['tokens'] = []
@@ -119,13 +127,57 @@ def coll_text_content(request, corpus_id):
 
     return HttpResponse(json.dumps(text_meta))
 
+@transaction.atomic
+@require_http_methods([ 'POST' ])
+def post_word(request, corpus_id):
+    data = json.loads(request.body)
+    word = data['word']
+    coll_token_seq = data['coll_token_seq']
+    text_name = data['text_name']
+
+    try:
+        if request.user.is_anonymous:
+            if ('anon_corpus_ids' in request.session and 
+                corpus_id in request.session['anon_corpus_ids']):
+                coll_token = CollToken.objects.get(corpus__id=corpus_id,
+                                                   seq=coll_token_seq)
+                all_tokens = Token.objects.filter(corpus__id=corpus_id,
+                                                  coll_token_seq=coll_token_seq)
+            else:
+                coll_token = None
+                all_tokens = []
+        else:
+            coll_token = CollToken.objects.get(corpus__user=request.user,
+                                               corpus__id=corpus_id,
+                                               seq=coll_token_seq)
+            all_tokens = Token.objects.filter(corpus__user=request.user,
+                                              corpus__id=corpus_id,
+                                              coll_token_seq=coll_token_seq)
+    except (CollToken.DoesNotExist, Token.DoesNotExist):
+        coll_token = None
+        all_tokens = []
+
+    if coll_token != None:
+        coll_token.word = word
+        coll_token.save()
+
+    for token in all_tokens:
+        if token.text.text_name == text_name:
+            token.is_base = True
+        else:
+            token.is_base = False
+        token.save()
+
+    return HttpResponse("Success")
+
+
 def coll_text_tokens(request, corpus_id, seq_start, seq_end, seq_center):
-    print(seq_start)
     all_tokens = Token.objects.filter(corpus__id=corpus_id,
                                       coll_token_seq__gte=int(seq_start),
                                       coll_token_seq__lte=int(seq_end)).order_by('text', 'seq')
     meta = {}
     meta['sequences'] = []
+    meta['coll_token_seq'] = int(seq_center);
     curr_text = None
     curr_word = ''
     tokens = []
@@ -140,7 +192,8 @@ def coll_text_tokens(request, corpus_id, seq_start, seq_end, seq_center):
             curr_text = token.text
             tokens = []
         tokens.append({ 'word': word,
-                        'is_center': token.coll_token_seq == int(seq_center) })
+                        'is_center': token.coll_token_seq == int(seq_center),
+                        'is_coll': token.is_base })
     if curr_text != None:
         meta['sequences'].append({ 'tokens': tokens,
                                    'text_name': curr_text.text_name,
@@ -175,6 +228,7 @@ def text_content(request, text_id):
         token_meta = {}
         token_meta['word'] = token.word
         token_meta['seq'] = token.coll_token_seq
+        token_meta['variability'] = token.variability
         text_meta['tokens'].append(token_meta)
 
     return HttpResponse(json.dumps(text_meta))
@@ -191,6 +245,8 @@ def create_text(request, corpus_id):
 
     # Error processing on the form values.
     emsg = name_error_message(text_name)
+    if text_name.lower() == "base text":
+        emsg.append('You cannot call a variant "Base Text".')
     if Text.objects.filter(corpus__id=corpus.id, text_name=text_name).exists():
         emsg.append('Text name for this corpus has already been used.')
     if content == '':
@@ -201,12 +257,22 @@ def create_text(request, corpus_id):
                         'error_messages': emsg,
                         'entered': request.POST['content'] })
 
-    print('creating text')
     controllers.create_text(corpus, text_name, content)
 #    time.sleep(60)
-    print('done creating text')
 
     return HttpResponseRedirect(reverse('variant_app:corpus', args=(corpus.id,)))
+
+def delete_text(request, text_id):
+    try:
+        text = Text.objects.get(pk=text_id, corpus__user=request.user)
+        corpus_id = text.corpus.id
+        text.delete()
+    except Text.DoesNotExist:
+        corpus_id = None
+        return HttpResponseRedirect(reverse('variant_app:user_home'))
+
+    return HttpResponseRedirect(reverse('variant_app:corpus', args=(corpus_id,)))
+
 
 #######################
 ## Utility functions ##

@@ -140,7 +140,8 @@ def collate(coll_text, tokens, debug=False):
             if debug:
                 assert(coll_token.seq == coll_token_seq)
             token.coll_token_seq = coll_token.seq
-            coll_token.variability += jf.jaro_winkler(coll_token.word, token.word)
+            token.variability = jf.jaro_winkler(coll_token.word, token.word)
+            coll_token.variability += token.variability
             coll_token.save()
             coll_token_prev_seq = coll_token.seq
             coll_token_seq += 1

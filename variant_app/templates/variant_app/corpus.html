@@ -1,20 +1,33 @@
 {% extends 'variant_app/base.html' %}
 
 {% block content %}
+
+{% load static %}
+<script src="{% static 'variant_app/dropdown.js' %}"></script>
+
 <div class="container">
+
+  <div class="top_elem sans_font">
+    <a  style="margin-right: 40px; font-size: 18px;" href="{% url 'variant_app:user_home' %}">Back to home</a>
+  </div>
+
+   <div class="dropdown">
+     <button onclick="dropdown();" class="dropbtn sans_font"><span style="color: #ddd;">&#x25BC;</span> Options</button>
+     <div id="myDropdown" class="dropdown-content sans_font">
+       <a href="#" style="color: red;"
+	  onclick="delete_corpus('{% url 'variant_app:delete_corpus' corpus.id %}')">Delete text</a>
+     </div>
+   </div>
 
   {% if user.is_anonymous %}
   {% include "registration/unregistered_warning.html" %}
   {% endif %}
 
-  <div class="top_elem sans_font">
-    <a  style="font-size: 18px;" href="{% url 'variant_app:user_home' %}">Back to home</a>
-  </div>
+  <h2 class="subheader title_font">{{ corpus.corpus_name }}</h2>
 
-  <h2 class="subheader sans_font">{{ corpus.corpus_name }}</h2>
-
-  <div class="elem text_font coll_color">
-    <a href="{% url 'variant_app:coll_text' corpus.id %}">View the collated text</a>
+  <div class="elem sans_font coll_color">
+    <a href="{% url 'variant_app:coll_text' corpus.id %}"
+       style="color: #fff; padding: 15px 25px 15px 25px;">View the collated text</a>
   </div>
   <br style="margin: 60px;" />
 
@@ -23,11 +36,17 @@
   </div>
 
   {% if texts %}
-  <ul class="elem_list text_font">
+  <ul class="elem_list title_font">
     {% for text in texts %}
+    {% if text.is_base %}
+    <li class="elem variant_color">
+      <a href="{% url 'variant_app:text' text.id %}">Base text</a>
+    </li>
+    {% else %}
     <li class="elem variant_color">
       <a href="{% url 'variant_app:text' text.id %}">{{ text.text_name }}</a>
     </li>
+    {% endif %}
     {% endfor %}
   </ul>
   {% endif %}

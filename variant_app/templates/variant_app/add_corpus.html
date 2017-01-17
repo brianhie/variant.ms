@@ -20,11 +20,11 @@
     <input type="text" name="corpus_name" value="" />
     <br /><br />
 
-    <label>Text content</label><br /><br />
+    <label>Base text content</label>
     {% if entered %}
-    <textarea rows="35" name="content">{{ entered }}</textarea>
+    <textarea rows="30" name="content">{{ entered }}</textarea>
     {% else %}
-    <textarea rows="35" name="content" placeholder="Add content here"></textarea>
+    <textarea rows="30" name="content" placeholder="Add content here"></textarea>
     {% endif %}
 
     <br /><br />

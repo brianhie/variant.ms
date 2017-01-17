@@ -16,7 +16,7 @@
   <!--div class="subsubheader sans_font">Your texts</div-->
 
   {% if corpuses %}
-  <ul class="elem_list text_font">
+  <ul class="elem_list title_font">
     {% for corpus in corpuses %}
     <li class="elem">
       <a href="{% url 'variant_app:corpus' corpus.id %}">{{ corpus.corpus_name }}</a>

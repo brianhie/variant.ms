@@ -12,15 +12,13 @@
   </style>
 
   <script src="{% static 'variant_app/coll_text.js' %}"></script>
+  <script src="{% static 'variant_app/js.cookie.js' %}"></script>
   <script>
     coll_text_visualization("{% url 'variant_app:coll_text_content' corpus.id %}",
     "{% url 'variant_app:coll_text_tokens' corpus.id 0 0 0 %}",
+    "{% url 'variant_app:post_word' corpus.id %}",
     "{{ text.corpus.id }}");
   </script>
-
-  {% if user.is_anonymous %}
-  {% include "registration/unregistered_warning.html" %}
-  {% endif %}
 
   <div class="top_elem sans_font">
     <a href="{% url 'variant_app:corpus' corpus.id %}"
@@ -30,6 +28,10 @@
     <input type="checkbox" id="cb" name="cb" checked="checked" />
     <label for="cb">Highlight variable words</label>
   </div>
+
+  {% if user.is_anonymous %}
+  {% include "registration/unregistered_warning.html" %}
+  {% endif %}
 
   <div>
     <div id="text" class="text text_font"><h2 class="text_title title_font">{{ corpus.corpus_name }}</h2></div>
@@ -51,7 +53,10 @@
       </table>
       {% endif %}
     </div>
+    <div></div>
+
   </div>
+
 
 </div>
 {% endblock %}

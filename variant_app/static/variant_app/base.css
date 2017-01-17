@@ -18,6 +18,20 @@
     margin: 40px 0 20px 0;
 }
 
+.help {
+    font-size: 13px;
+}
+
+.error {
+    font-size: 18px;
+    color: #c80707;
+}
+
+.warning {
+    font-size: 15px;
+    color: #c80707;
+}
+
 .nav {
     border: none;
     list-style:none;
@@ -74,7 +88,7 @@
     border: 1px solid #aaa;
     border-radius: 50px;
 /*    border-right: 1px solid #aaa;*/
-    overflow:auto;
+    overflow: auto;
 }
 
 .coll_text_container {
@@ -87,7 +101,7 @@
     border: 1px solid #aaa;
     border-radius: 50px;
 /*    border-right: 1px solid #aaa;*/
-    overflow:auto;
+    overflow: hidden;
 }
 
 
@@ -153,7 +167,8 @@
 .elem {
     font-size: 30px;
     list-style-type: none;
-    background-color: #F0D7AA;
+    border-radius: 4px;
+    border: #ccc 1px solid;
 
     display: inline-block;
     margin: 12px;
@@ -168,15 +183,16 @@
 }
 
 .elem:hover {
-    background-color: #ddb480;
+    background-color: #eee;
 }
 
 .coll_color {
-    background-color: #acd7e6;
+    background-color: #005b7b;
+    border: none;
 }
 
 .coll_color:hover {
-    background-color: #73c2de;
+    background-color: #3694b6;
 
 }
 .variant_color {
@@ -191,6 +207,7 @@
 /*    padding-left: 20px;*/
     font-size: 40px;
     color: #111;
+    font-weight: 600;
 }
 
 .text {
@@ -202,10 +219,16 @@
     color: #444;
 }
 
+.base_text {
+    white-space: pre-wrap;
+    display: inline-table;
+}
+
 .annotate {
     max-width: 42%;
     float: left;
-    padding-left:20px;
+/*    display: inline-block;*/
+    padding-left: 20px;
 }
 
 .annotate_block, .coll_vars_block {
@@ -214,13 +237,22 @@
     border-left: #222 3px solid;
 }
 
+.annotate_row:hover {
+}
+
 .annotate_name {
     text-align: right;
-    font-weight: bold;
-    padding-right: 15px;
+    padding: 5px 15px 5px 5px;
+    font-size: 18px;
 }
 
 .annotate_text {
+    padding: 5px 5px 5px 5px;
+}
+
+.annotate_text:hover{
+    outline: #aaa 1px solid;
+    cursor: default;
 }
 
 .coll_vars_title {
@@ -313,6 +345,10 @@ label {
 
 .form textarea {
     width: 100%;
+    border: #aaa 1px solid;
+    border-radius: 5px;
+    padding: 20px;
+    font-size: 15px;
 }
 
 .underline:after {
@@ -331,11 +367,45 @@ label {
     cursor: pointer;
 }
 
-.help {
-    font-size: 13px;
+.wrapper {
+    width: 70%;
 }
 
-.error {
+/**
+* Dropdown menu
+*/
+
+.dropbtn {
+    background:none;
     font-size: 18px;
-    color: #c80707;
+    border: none;
+    cursor: pointer;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 160px;
+    box-shadow: 0px 8px 8px 0px rgba(0,0,0,0.2);
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #f1f1f1
+}
+
+.show {
+    display: block;
 }

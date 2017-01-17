@@ -1,14 +1,16 @@
 var corpus_id = "";
 var tokens_url = "";
+var post_word_url = "";
 var last_event = null;
 var highlight_on = true;
 var variant_texts = null;
 
 var selected = null;
 
-function coll_text_visualization(text_url, t_url, cid) {
+function coll_text_visualization(text_url, t_url, pw_url, cid) {
     corpus_id = cid;
     tokens_url = _base_tokens_url(t_url);
+    post_word_url = pw_url;
 
     document.addEventListener("DOMContentLoaded", function() {
 	var checkbox = document.getElementById("cb");
@@ -47,6 +49,18 @@ function _get(func, url) {
 	}
     };
     xmlhttp.send();
+}
+
+function _post(data, csrftoken, func, url) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+    xhr.setRequestHeader('X-CSRFToken', csrftoken);
+    
+    // send the collected data as JSON
+    xhr.send(JSON.stringify(data));    
+
+    xhr.onloadend = func;
 }
 
 function _var_color(variability) {
@@ -102,16 +116,17 @@ function _hover_unhighlight(event) {
 
 function _display_tokens(responseText) {
     var content_json = JSON.parse(responseText);
-
-    var top = last_event.pageY;
+    var coll_token_seq = content_json.coll_token_seq;
 
     var sequence_list = document.createElement("table");
+    sequence_list.style.position = "relative";
     sequence_list.className = "annotate_block"
-    sequence_list.style.top = top;
+    sequence_list.onclick = function(event) { event.stopPropagation(); }
 
     for (var s = 0; s < content_json.sequences.length; s++) {
 	var sequence = content_json.sequences[s];
 	var sequence_row = document.createElement("tr")
+	sequence_row.className = "annotate_row"
 
 	var text_span = document.createElement("td");
 	if (sequence.is_base) {
@@ -124,22 +139,46 @@ function _display_tokens(responseText) {
 
 	var sequence_elem = document.createElement("td");
 	sequence_elem.className = "annotate_text text_font"
+	sequence_elem.onclick = _post_word_change;
+
 	for (var t = 0; t < sequence.tokens.length; t++) {
 	    var token = sequence.tokens[t];
 	    var span = document.createElement("span");
 	    span.textContent = token.word
 	    if (token.is_center) {
 		span.style.fontWeight = "bold";
+		if (sequence_elem.post_word_data) {
+		    sequence_elem.post_word_data.word += token.word;
+		} else {
+		    sequence_elem.post_word_data = {
+			"word": token.word,
+			"coll_token_seq": coll_token_seq,
+			"corpus_id": corpus_id,
+			"text_name": sequence.text_name,
+		    };
+		}
+		if (token.is_coll) {
+		    sequence_elem.style.outline = "#444 1px solid";
+		}
 	    }
 	    sequence_elem.appendChild(span);
 	}
 	sequence_row.appendChild(sequence_elem);
-
 	sequence_list.appendChild(sequence_row);
     }
 
     var annotation = document.getElementById("annotation");
     annotation.appendChild(sequence_list);
+
+
+    /* Logic for computing offset. */
+    var a = document.getElementById("annotation");
+    var c = document.getElementById("contain");
+    var top =  window.pageYOffset + last_event.clientY - a.offsetTop;
+    var height = sequence_list.clientHeight;
+    if (top + height > c.clientHeight)
+	top = c.clientHeight - height - 150;
+    sequence_list.style.top = top;
 }
 
 function _load_tokens(event) {
@@ -164,7 +203,6 @@ function _load_tokens(event) {
 
 function _toggle_highlighting(event) {
     var tokens = document.getElementsByClassName("coll_token");
-    console.log(tokens);
     if (highlight_on) {
 	for (var t = 0; t < tokens.length; t++) {
 	    tokens[t].style.backgroundColor = "#fff";
@@ -185,4 +223,26 @@ function _variant_texts_side() {
 	selected.style.borderBottom = "none";
 	selected = null;
     }
+}
+
+function _post_word_change(event) {
+    if (this.post_word_data) {
+	var csrftoken = Cookies.get("csrftoken");
+	_post(this.post_word_data, csrftoken, function() {}, post_word_url)
+	var seq = this.post_word_data.coll_token_seq;
+	document.getElementById("seq" + seq).textContent = this.post_word_data.word;
+
+	// Only highlight clicked word.
+	var to_highlight = this;
+	var node = to_highlight.parentNode.parentNode.firstChild;
+	while (node) {
+	    if (node.lastChild == to_highlight) {
+		node.lastChild.style.outline = "#444 1px solid";
+	    } else {
+		node.lastChild.removeAttribute("style");
+	    }
+	    node = node.nextSibling;
+	}
+    }
+    event.stopPropagation();
 }

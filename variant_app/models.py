@@ -74,6 +74,7 @@ class Token(models.Model):
     word = models.TextField(default='')
     seq = models.IntegerField(default=-1)
     is_base = models.BooleanField(default=False)
+    variability = models.FloatField(default=0.)
 
     def __str__(self):
         return self.text.text_name + '_' + str(self.seq)
