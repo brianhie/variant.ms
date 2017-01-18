@@ -59,7 +59,6 @@ function _post(data, csrftoken, func, url) {
     
     // send the collected data as JSON
     xhr.send(JSON.stringify(data));    
-
     xhr.onloadend = func;
 }
 
@@ -176,9 +175,10 @@ function _display_tokens(responseText) {
     var c = document.getElementById("contain");
     var top =  window.pageYOffset + last_event.clientY - a.offsetTop;
     var height = sequence_list.clientHeight;
-    if (top + height > c.clientHeight)
-	top = c.clientHeight - height - 150;
-    sequence_list.style.top = top;
+    if (top + height > c.clientHeight - 150) { // Why 150? It's magic!
+	top = Math.max(c.clientHeight - height - 150, 0);
+    }
+    sequence_list.style.top = top + "px";
 }
 
 function _load_tokens(event) {

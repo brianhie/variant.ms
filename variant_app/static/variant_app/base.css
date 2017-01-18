@@ -1,5 +1,5 @@
 .title_font {
-    font-family: "Baskerville Old Face", Baskerville, Palatino, "Palatino Linotype", "Merriweather", serif;
+    font-family: "Baskerville Old Face", Baskerville, "Cormorant Garamond", serif;
     font-weight: normal;
 }
 
@@ -101,7 +101,7 @@
     border: 1px solid #aaa;
     border-radius: 50px;
 /*    border-right: 1px solid #aaa;*/
-    overflow: hidden;
+    overflow: auto;
 }
 
 
@@ -211,7 +211,7 @@
 }
 
 .text {
-    max-width: 55%;
+    width: 55%;
     padding-left: 20px;
     white-space: pre-wrap;
     float: left;
@@ -225,14 +225,12 @@
 }
 
 .annotate {
-    max-width: 42%;
+    width: 40%;
     float: left;
-/*    display: inline-block;*/
     padding-left: 20px;
 }
 
 .annotate_block, .coll_vars_block {
-    position: absolute;
     padding: 20px;
     border-left: #222 3px solid;
 }

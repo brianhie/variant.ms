@@ -5,10 +5,13 @@ import jellyfish as jf
 import re
 import string
 import sys
+import unicodedata
 import variant_collate as vc
 
 from models import Corpus, CollText, Text, CollToken, Token
 
+punc_table = dict.fromkeys(i for i in xrange(sys.maxunicode)
+                           if unicodedata.category(unichr(i)).startswith('P'))
 
 #@transaction.atomic
 def create_corpus(corpus_name, content):
@@ -40,8 +43,9 @@ def _split(content):
         if a.strip() == '':
             yield a
             continue
-        for b in re.split(ur'([\.?!,:;\-–—―—=…\}\]\)\"”’]+$|^[\{\[\(\"“‘]+)',
+        for b in re.split(ur'([\.?!,:;=…\}\]\)\"”’]+$|^[\{\[\(\"“‘]+|\-–—―—)',
                           a, re.UNICODE):
+#        for b in re.split(ur'(\W+)', a, re.UNICODE):
             if b != '':
                 yield b
 
@@ -82,18 +86,27 @@ def init_coll_text(corpus, base_tokens):
     return coll_text
 
 def _isspace(s):
-    return s.strip() == ''
+    return s.isspace()
 
 def _ispunc(s):
-    return s.rstrip(string.punctuation) == ''
+    return s.translate(punc_table) == ''
+
+def _match_ampersand(a, b):
+    if ((a == '&' and b == 'and') or
+        (a == 'and' and b == '&')):
+        return True
 
 def _token_similarity(a, b):
-    return _token_similarity_score(a.word, b.word) > 0.8
+    return _word_similarity_score(a.word, b.word) > 0.8
 
-def _token_similarity_score(a, b):
+def token_similarity_score(a, b):
+    return _word_similarity_score(a.word, b.word)
+
+def _word_similarity_score(a, b):
     if a == b:
         return 1.
 
+    # Case and whitespace insenstive comparison.
     if a.lower().strip() == b.lower().strip():
         return 0.95
 
@@ -102,6 +115,9 @@ def _token_similarity_score(a, b):
         (not _isspace(a) and _isspace(b))):
         return 0
 
+    # Exceptions to punctuation.
+    if _match_ampersand(a, b):
+        return 0.85
     # Penalize punctuation matching to non-punctuation.
     if _ispunc(a) and _ispunc(b):
         return 0.95
@@ -140,7 +156,7 @@ def collate(coll_text, tokens, debug=False):
             if debug:
                 assert(coll_token.seq == coll_token_seq)
             token.coll_token_seq = coll_token.seq
-            token.variability = jf.jaro_winkler(coll_token.word, token.word)
+            token.variability = token_similarity_score(coll_token, token)
             coll_token.variability += token.variability
             coll_token.save()
             coll_token_prev_seq = coll_token.seq

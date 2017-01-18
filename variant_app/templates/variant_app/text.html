@@ -15,9 +15,11 @@
   </style>
 
   <script src="{% static 'variant_app/text.js' %}"></script>
+  <script src="{% static 'variant_app/js.cookie.js' %}"></script>
   <script>
     text_visualization("{% url 'variant_app:text_content' text.id %}",
     "{% url 'variant_app:text_content' base_text.id %}",
+    "{% url 'variant_app:manual_coll' text.id %}",
     "{{ text.corpus.id }}");
   </script>
 
@@ -27,14 +29,14 @@
   </div>
 
   {% if not text.is_base %}
+  <div class="top_elem sans_font" style="margin-right: 40px;">
+    <input type="checkbox" id="base_cb" name="base_checkbox" checked="checked" />
+    <label for="base_cb">Compare with base text</label>
+  </div>
+
   <div class="top_elem sans_font">
     <input type="checkbox" id="var_cb" name="variable_checkbox" checked="checked" />
     <label for="var_cb">Highlight variable words</label>
-  </div>
-
-  <div class="top_elem sans_font" style="margin-left: 40px;">
-    <input type="checkbox" id="base_cb" name="base_checkbox" />
-    <label for="base_cb">Compare with base text</label>
   </div>
 
   <div class="dropdown" style="margin-left: 40px;">

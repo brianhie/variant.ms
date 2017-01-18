@@ -1,7 +1,7 @@
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
 from django.template import loader
 from django.urls import reverse
@@ -227,7 +227,8 @@ def text_content(request, text_id):
     for token in text.tokens().order_by('seq'):
         token_meta = {}
         token_meta['word'] = token.word
-        token_meta['seq'] = token.coll_token_seq
+        token_meta['seq'] = token.seq
+        token_meta['coll_token_seq'] = token.coll_token_seq
         token_meta['variability'] = token.variability
         text_meta['tokens'].append(token_meta)
 
@@ -272,6 +273,43 @@ def delete_text(request, text_id):
         return HttpResponseRedirect(reverse('variant_app:user_home'))
 
     return HttpResponseRedirect(reverse('variant_app:corpus', args=(corpus_id,)))
+
+@transaction.atomic
+@require_http_methods([ 'POST' ])
+def manual_coll(request, text_id):
+    data = json.loads(request.body);
+    if not 'seq' in data:
+        return HttpResponseBadRequest("No seq given.")
+    seq = int(data['seq'])
+    if not 'coll_token_seq' in data:
+        return HttpResponseBadRequest("No coll_token_seq given.")
+    coll_token_seq = int(data['coll_token_seq'])
+
+    try:
+        text = Text.objects.get(pk=text_id, corpus__user=request.user)
+    except Text.DoesNotExist:
+        return HttpResponseForbidden("Could not find text or incorrect permissions.")
+    try:
+        token = Token.objects.get(seq=seq, text=text)
+    except Token.DoesNotExist:
+        return HttpResponseNotFound("Could not find token.")
+    try:
+        coll_token = CollToken.objects.get(seq=coll_token_seq, corpus=text.corpus)
+        prev_coll_token = CollToken.objects.get(seq=token.coll_token_seq, corpus=text.corpus)
+    except CollToken.DoesNotExist:
+        return HttpResponseNotFound("Could not find coll token.")
+
+    prev_coll_token.variability -= controllers.token_similarity_score(prev_coll_token, token)
+    prev_coll_token.save()
+
+    token.coll_token_seq = coll_token_seq
+    token.variability = controllers.token_similarity_score(coll_token, token)
+    token.save()
+
+    coll_token.variability += token.variability
+    coll_token.save()
+
+    return HttpResponse("Successful manual collation.")
 
 
 #######################

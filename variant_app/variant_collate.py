@@ -14,14 +14,44 @@ type contained in A and B.
 
 """
 
+from collections import deque
 from math import ceil
 import sys
 
 def collate(A, B, similarity, debug=False):
     result = []
     _LCS(A, B, similarity, result, 0, debug=debug)
+    
+    delete = deque()
+    insert = deque()
     for r in result:
-        yield r
+        if r[2] == 'match':
+            # Naive edit script match.
+            while len(delete) > 0 and len(insert) > 0:
+                delete_elem = delete.pop()
+                insert_elem = insert.pop()
+                yield (delete_elem[0], insert_elem[1], 'match')
+            while len(insert) > 0:
+                yield insert.pop()
+            while len(delete) > 0:
+                yield delete.pop()
+
+            yield r
+        elif r[2] == 'delete':
+            delete.appendleft(r)
+        elif r[2] == 'insert':
+            insert.appendleft(r)
+        
+    # Naive edit script match.
+    while len(delete) > 0 and len(insert) > 0:
+        delete_elem = delete.pop()
+        insert_elem = insert.pop()
+        yield (delete_elem[0], insert_elem[1], 'match')
+    while len(insert) > 0:
+        yield insert.pop()
+    while len(delete) > 0:
+        yield delete.pop()
+
 
 # Will print out tree of splitted arrays which is useful for debugging.
 def _debug_out(A, B, depth):
@@ -51,11 +81,10 @@ def _LCS(A, B, similarity, result, depth, debug=False):
         if D > 1:
             _LCS(A[:x], B[:y], similarity, result, depth + 1, debug=debug)
 
-            local_results = []
+            local_results = deque()
             for a, b, status in _collate_ND(A[x:u], B[y:v], similarity):
-                local_results.append((a, b, status))
-            local_results.reverse()
-            result += local_results
+                local_results.appendleft((a, b, status))
+            result += list(local_results)
 
             if debug:
                 _debug_out(A[u:], B[v:], depth + 1)
@@ -63,17 +92,15 @@ def _LCS(A, B, similarity, result, depth, debug=False):
             _LCS(A[u:], B[v:], similarity, result, depth + 1, debug=debug)
 
         elif M > N:
-            local_results = []
+            local_results = deque()
             for a, b, status in _collate_ND(A, B, similarity):
-                local_results.append((a, b, status))
-            local_results.reverse()
-            result += local_results
+                local_results.appendleft((a, b, status))
+            result += list(local_results)
         else:
-            local_results = []
+            local_results = deque()
             for a, b, status in _collate_ND(A, B, similarity):
-                local_results.append((a, b, status))
-            local_results.reverse()
-            result += local_results
+                local_results.appendleft((a, b, status))
+            result += list(local_results)
 
 
 def _middle_snake(A, B, similarity):
