@@ -2,4 +2,7 @@
 
 source variantenv/bin/activate
 
-python manage.py runserver 0.0.0.0:8000
+while true
+do
+    python manage.py runserver 0.0.0.0:8000
+done
