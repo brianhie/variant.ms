@@ -43,7 +43,7 @@ def _split(content):
         if a.strip() == '':
             yield a
             continue
-        for b in re.split(ur'([\.?!,:;=…\}\]\)\"”’]+$|^[\{\[\(\"“‘]+|\-–—―—)',
+        for b in re.split(ur'([\.?!,:;=…\}\]\)\"”’]+$|^[\{\[\(\"“‘]+|\-–—―—\|)',
                           a, re.UNICODE):
 #        for b in re.split(ur'(\W+)', a, re.UNICODE):
             if b != '':

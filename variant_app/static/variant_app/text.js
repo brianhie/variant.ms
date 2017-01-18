@@ -85,18 +85,22 @@ function _content_in_elem(elem_id, content_json) {
 
 	if (word.replace(/\s+/g,'') != "") {
 	    token.prev_color = _var_color(variability);
+	    if (elem_id != "base_text") {
+		token.draggable = true;
+		token.ondragstart = _drag_token;
+		token.text_seq = seq;
+		token.id = "textSeq" + seq;
+	    }
+	} else if (word.replace(/[ \t\r]+/g, '') != "") {
+	    token.textContent = word.replace(/[ \t\r]+/g, '');
 	}
 
 	if (elem_id == "base_text") {
 	    token.ondragover = _drag_over_token;
 	    token.ondragleave = _drag_leave_token;
 	    token.ondrop = _drop_token;
-	} else {
-	    token.draggable = true;
-	    token.ondragstart = _drag_token;
-	    token.text_seq = seq;
-	    token.id = "textSeq" + seq;
-	}
+	} 
+
 	text_elem.appendChild(token);
     }
 }
@@ -104,8 +108,6 @@ function _content_in_elem(elem_id, content_json) {
 function _display_content(responseText) {
     var content_json = JSON.parse(responseText);
     _content_in_elem("text", content_json);
-    _toggle_highlighting();
-    _toggle_base();
 }
 
 function _hover_highlight(event) {
