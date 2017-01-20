@@ -1,17 +1,125 @@
-{% extends 'variant_app/base.html' %}
-{% block content %}
+{% load static %}
+<!DOCTYPE html> 
+<html>
 
-<div style="margin: 0 auto; width: 50%;">
+  <head>
+    <title>Variant - Interact with literature in a new way</title>
+    <link rel="stylesheet" type="text/css"
+	  href="https://fonts.googleapis.com/css?family=Merriweather:300|Source+Sans+Pro:300|Cormorant+Garamond:600"></link>
+    <link rel="stylesheet" type="text/css"
+	  href="{% static 'variant_app/base.css' %}"></link>
+    <link rel="stylesheet" type="text/css"
+	  src="{% static 'variant_app/checkbox.css' %}"></link>
+  </head>
 
-{% if user.is_authenticated %}
-<p><a href="{% url 'variant_app:user_home' %}">View your corpuses</a></p>
-{% else %}
-<p><a href="{% url 'variant_app:add_corpus' %}">Get started</a></p>
-{% endif %}
+  <body style="background-color: #fff; height: 100vh;">
 
-<p>
-  Web development is fun and not tedious at all!
-</p>
+    <script src="{% static 'variant_app/resize.js' %}"></script>
+    <div class="header" style="width: 1000px;" id="variant_head">
+      
+      <h1 style="padding-top: 80px; margin-bottom: 40px;">
+	<span class="title_font" style="font-size: 70px; margin:0px; padding: 0px;">
+	  Variant
+	</span>
+	<span class="sans_font" style="padding-left: 10px;font-size: 25px;; margin:0px;">
+	  A different way of interacting with literature.
+	</span>
+      </h1>
+
+      <div style="margin-bottom: 50px;">
+	<ul class="index_nav sans_font" style=" font-size: 28px;">
+	  <li>
+	    <a style="padding: 14px 20px 16px 20px; border: #bbb 1px solid;" class="tile"
+	       href="{% url 'variant_app:explore_home' %}">Explore now</a>
+	  </li>
+	  <li style="border: #bbb 1px solid; padding: 14px 20px 16px 20px;" class="tile">
+	    <a href="{% url 'variant_app:user_home' %}">For textual critics</a>
+	  </li>
+	</ul>
+      </div>
+
+      <div id="intro" style="margin-bottom: 60px;">
+	<div class="text_font" style="max-width: 550px; float: left; text-align: justify;">
+	  <h2 class="sans_font subtitle">Not all texts are created equal.</h2>
+	  <div style="color: #444; line-height: 1.8;">
+	  <p>
+	    If you&rsquo;ve ever read a poem, play, novel, or some other
+	    &ldquo;literary&rdquo; work, you probably read
+	    only one version of the text. But most of the time, there are many versions of the same work,
+	    with slight differences in word choice, sentence structure, and spelling.
+	  </p>
+	  <p>Often the text you
+	    see in a nice, published book is actually an amalgamation of multiple original texts, with
+	    the choices often being made by academics known as textual critics.
+	  </p>
+	  <p>
+	    Why would there be different versions of a work? Sometimes, an author might choose to
+	    revise a work multiple times as his or her artistic sensibilities shift.
+	    Editors might also modify a text, removing perceived
+	    obscenity or even creatively inserting their own material. And since most of these texts
+	    were written before computers, or even the printing press, errors could
+	    be introduced when people copied the work for themselves.
+	  </p>
+	  <p>
+	    Why does this matter? Because words matter, and sometimes a single word variant can 
+	    change an entire interpretation of a text.
+	  </p>
+	  </div>
+	</div>
+	<div style="">
+	  <img  style="width: 360px; margin-left: 60px;"
+		src="{% static 'images/texts.jpg' %}" alt="Manuscript"/>
+	</div>
+      </div>
+
+      <br />
+
+      <div id="explore_tutorial" style="margin-bottom: 100px;">
+	<h2 class="sans_font subtitle">Read a text with its variants at your fingertips.</h2>
+	<div class="text_font" style="text-align: justify;">
+	  <div style="color: #444; line-height: 1.8;">
+	  <p>
+	    Variant lets you read a text just like you would anywhere else, but it also 
+	    makes it easy for you to see a text&rsquo;s variants, as well as words that are
+	    particularly variable.
+	  </p>
+	  <img style="border: #ddd 1px solid;" class="tile"
+	       src="{% static 'images/text.jpg' %}" alt="Manuscript">
+	  <p>
+	    When you view a text, Variant highlights words that have many variants. You can
+	    also click on a word, and Variant will give you all of the words in the variant
+	    texts that it thinks the word corresponds to. If you uploaded that text, you can
+	    choose which version of the word you want reflected in the base text.
+	  </p>
+	  </div>
+	</div>
+      </div>
+
+      <div id="collate_tutorial" style="margin-bottom: 50px;">
+	<h2 class="sans_font subtitle">Variant makes collation easier.</h2>
+	<div class="text_font" style="text-align: justify;">
+	  <div style="color: #444; line-height: 1.8;">
+	    <p>
+	      Variant was designed to help make the collation process easier for textual critics.
+	      When you upload a base text, Variant will also let you upload variant texts.
+	      Variant will split up each new text into words, and performs the normally tedious
+	      process of comparing each word of the variant text to each word of the base text.
+	    </p>
+	    <img style="border: #ddd 1px solid; margin: 10px 0px 20px 0px;" class="tile"
+		 src="{% static 'images/coll_text.gif' %}" alt="Manuscript"/>
+	    <p>
+	      If you don&rsquo;t like a match that Variant made, simply view the variant text
+	      side-by-side with the base text, and drag a word from the variant text over a 
+	      word from the base text to make a match. Variant will also highlight matches between
+	      very different words, so you know where to look when collating.
+	    </p>
+	  </div>
+	</div>
+      </div>
+
+    </div>
 
 </div>
-{% endblock %}
+
+  </body>
+</html>

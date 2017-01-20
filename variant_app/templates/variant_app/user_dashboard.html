@@ -1,7 +1,7 @@
 {% extends 'variant_app/base.html' %}
 
 {% block content %}
-<div class="container">
+<div class="container tile">
 
   {% if user.is_anonymous %}
   {% include "registration/unregistered_warning.html" %}
@@ -9,18 +9,51 @@
   <p class="username sans_font">Welcome {{ user.username }}</p>
   {% endif %}
 
+  {% if not user.is_anonymous %}
+  <p class="subsection sans_font">My favorites</p>
+  <div class="top_elem sans_font">
+    <a class="sans_font" href="{% url 'variant_app:explore_home' %}">+ Explore to add favorites</a>
+  </div>
+
+  {% if favorites %}
+  <ul style="padding: 0px; margin: 0px;">
+    {% for corpus in favorites %}
+    <li style="border: #ddd 1px solid;" class="corpus_tile">
+      <a href="{% url 'variant_app:coll_text' corpus.id %}">
+	<div class="tile_wrap tile_user sans_font">
+	  Collated by {{ corpus.user.username }}
+	  <span style="padding-left: 4px; color: #555;">| &#9733; {{ corpus.n_favorites }}</span>
+	</div>
+	<div class="tile_wrap tile_title title_font">{{ corpus.corpus_name }}</div>
+	{% if corpus.author %}
+	<div class="tile_wrap tile_author sans_font">by {{ corpus.author }}</div>
+	{% else %}
+	<div class="tile_wrap tile_author sans_font" style="white-space:pre-wrap;"> </div>
+	{% endif %}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% endif %}
+
   <p class="subsection sans_font">My texts</p>
   <div class="top_elem sans_font">
     <a class="sans_font" href="{% url 'variant_app:add_corpus' %}">+ Add a new text</a>
   </div>
 
-  <!--div class="subsubheader sans_font">Your texts</div-->
-
   {% if corpuses %}
   <ul class="elem_list title_font">
     {% for corpus in corpuses %}
     <li class="elem">
-      <a href="{% url 'variant_app:corpus' corpus.id %}">{{ corpus.corpus_name }}</a>
+      <a href="{% url 'variant_app:corpus' corpus.id %}">
+	<div>{{ corpus.corpus_name }}</div>
+	{% if corpus.author %}
+	<div class="sans_font" style="font-size: 15px;">by {{ corpus.author }}</div>
+	{% else %}
+	<div class="sans_font" style="font-size: 15px; font-style: italic; color: #aaa;">No author</div>
+	{% endif %}
+      </a>
     </li>
     {% endfor %}
   </ul>

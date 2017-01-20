@@ -10,7 +10,7 @@ import json
 import re
 import time
 
-from .models import Corpus, CollText, CollToken, Text, Token
+from .models import Corpus, CollText, CollToken, Text, Token, Profile
 from .forms import RegistrationForm
 import controllers
 
@@ -18,22 +18,40 @@ def index(request):
     return render(request, 'variant_app/index.html', {})
 
 def user_home(request):
+    context = {}
     if request.user.is_anonymous:
         if 'anon_corpus_ids' in request.session:
             corpus_ids = request.session['anon_corpus_ids']
-            corpuses = []
+            context['corpuses'] = []
             for pk in corpus_ids:
                 try:
-                    corpuses.append(Corpus.objects.get(pk=pk))
+                    context['corpuses'].append(Corpus.objects.get(pk=pk))
                 except Corpus.DoesNotExist:
                     continue
         else:
-            corpuses = []
+            context['corpuses'] = []
     else:
-        corpuses = Corpus.objects.filter(user=request.user)
+        context['corpuses'] = Corpus.objects.filter(user=request.user).order_by('-updated')
+        context['favorites'] = Profile.objects.get(user=request.user).favorites.all().order_by('-updated')
 
-    context = { 'corpuses': corpuses }
     return render(request, 'variant_app/user_dashboard.html', context)
+
+def explore_home(request):
+    num_recents = 8
+    num_favorites = 8
+    context = {}
+    try:
+        favorites = Corpus.objects.filter(is_public=True).order_by('-n_favorites', '-updated')[:num_favorites]
+    except Corpus.DoesNotExist:
+        pass
+    context['favorites'] = favorites
+    try:
+        recents = Corpus.objects.filter(is_public=True).order_by('-created')[:num_recents]
+    except Corpus.DoesNotExist:
+        pass
+    context['recents'] = recents    
+
+    return render(request, 'variant_app/explore_home.html', context)
 
 ############
 ## Corpus ##
@@ -41,6 +59,10 @@ def user_home(request):
 
 def corpus(request, corpus_id):
     corpus = get_object_or_404(Corpus, pk=corpus_id)
+
+    if corpus.user != request.user and not corpus.is_public:
+        return HttpResponseNotFound('Text not found or you do not have permissions to view this file.')
+
     try:
         coll_text = CollText.objects.get(corpus=corpus)
     except CollText.DoesNotExist:
@@ -56,8 +78,13 @@ def add_corpus(request):
     context = {}
     return render(request, 'variant_app/add_corpus.html', context)
 
+@transaction.atomic
 def create_corpus(request):
     name = request.POST['corpus_name'].strip()
+    if 'author' in request.POST:
+        author = request.POST['author'].strip()
+    else:
+        author = ''
     content = request.POST['content'].strip()
 
     emsg = name_error_message(name)
@@ -72,6 +99,9 @@ def create_corpus(request):
                         'entered': request.POST['content'] })
 
     corpus = controllers.create_corpus(name, content)
+    if author != '':
+        corpus.author = author.strip().lower().title()
+        corpus.save()
 
     # Handle corpus creation for anonymous user sessions.
     if request.user.is_anonymous:
@@ -88,12 +118,42 @@ def create_corpus(request):
     return HttpResponseRedirect(reverse('variant_app:user_home'))
 
 def delete_corpus(request, corpus_id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden("Unauthenticated user tried to delete a corpus")
+
     try:
         Corpus.objects.get(pk=corpus_id, user=request.user).delete()
     except Corpus.DoesNotExist:
         pass
     
     return HttpResponseRedirect(reverse('variant_app:user_home'))
+
+def corpus_public(request, corpus_id):
+    corpus = get_object_or_404(Corpus, pk=corpus_id, user=request.user)
+    corpus.is_public = not corpus.is_public
+    corpus.save()
+    return HttpResponse("Successfuly toggled corpus public status.")
+
+def has_favorited(profile, corpus_id):
+    return profile.favorites.filter(pk=corpus_id).exists()
+
+@transaction.atomic
+def corpus_favorite(request, corpus_id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden("Unauthenticated users cannot favorite a corpus.")
+
+    corpus = get_object_or_404(Corpus, pk=corpus_id)
+    profile = get_object_or_404(Profile, user=request.user)
+    if has_favorited(profile, corpus_id):
+        profile.favorites.remove(corpus)
+        corpus.n_favorites -= 1
+    else:
+        profile.favorites.add(corpus)
+        corpus.n_favorites += 1
+    corpus.save()
+    profile.save()
+
+    return HttpResponse("Successfuly favorited corpus.")
 
 ###############
 ## Coll Text ##
@@ -102,11 +162,20 @@ def delete_corpus(request, corpus_id):
 def coll_text(request, corpus_id):
     coll_text = get_object_or_404(CollText, corpus__id=corpus_id)
     corpus = get_object_or_404(Corpus, pk=corpus_id)
+
+    context = {}
+    if request.user != corpus.user:
+        if not corpus.is_public:
+            return HttpResponseForbidden("Sorry, could not find the text you were looking for.")
+        elif not request.user.is_anonymous:
+            profile = get_object_or_404(Profile, user=request.user)
+            is_fav = has_favorited(profile, corpus_id)
+            context['is_fav'] = is_fav
     try:
         texts = Text.objects.filter(corpus__id=corpus_id)
     except Text.DoesNotExist:
         texts = []
-    context = { 'corpus': corpus, 'coll_text': coll_text, 'texts': texts }
+    context.update({ 'corpus': corpus, 'coll_text': coll_text, 'texts': texts })
     return render(request, 'variant_app/coll_text.html', context)
 
 def coll_text_content(request, corpus_id):
@@ -139,9 +208,11 @@ def post_word(request, corpus_id):
         if request.user.is_anonymous:
             if ('anon_corpus_ids' in request.session and 
                 corpus_id in request.session['anon_corpus_ids']):
-                coll_token = CollToken.objects.get(corpus__id=corpus_id,
+                coll_token = CollToken.objects.get(corpus__user__is_anonymous=True,
+                                                   corpus__id=corpus_id,
                                                    seq=coll_token_seq)
-                all_tokens = Token.objects.filter(corpus__id=corpus_id,
+                all_tokens = Token.objects.filter(corpus__user__is_anonymous=True,
+                                                  corpus__id=corpus_id,
                                                   coll_token_seq=coll_token_seq)
             else:
                 coll_token = None
@@ -212,10 +283,9 @@ def text(request, text_id):
 
 def text_content(request, text_id):
     text = get_object_or_404(Text, pk=text_id)
-#    if (not text.corpus.id in request.session['anon_corpus_ids'] and
-#        text.corpus.user != request.user and
-#        not text.corpus.is_public):
-#        return HttpResponseNotFound('Text not found or you do not have permissions to view this file.')
+
+    if text.corpus.user != request.user and not text.corpus.is_public:
+        return HttpResponseNotFound('Text not found or you do not have permissions to view this file.')
 
     text_meta = {}
     text_meta['name'] = text.text_name

@@ -1,37 +1,45 @@
 {% extends 'variant_app/base.html' %}
 {% block content %}
 {% load static %}
-<div class="coll_text_container" id="contain">
+<div class="coll_text_container tile" id="contain">
 
   <style>
     span[id^="seq"] {
-    line-height: 30px;
-    cursor: default;
+        line-height: 1.6;
+        cursor: default;
     }
-
   </style>
 
   <script src="{% static 'variant_app/coll_text.js' %}"></script>
+  <script src="{% static 'variant_app/ajax.js' %}"></script>
   <script src="{% static 'variant_app/js.cookie.js' %}"></script>
   <script>
     coll_text_visualization("{% url 'variant_app:coll_text_content' corpus.id %}",
     "{% url 'variant_app:coll_text_tokens' corpus.id 0 0 0 %}",
     "{% url 'variant_app:post_word' corpus.id %}",
+    "{% url 'variant_app:corpus_favorite' corpus.id %}",
     "{{ text.corpus.id }}");
   </script>
 
+
+  {% if user == corpus.user %}
   <div class="top_elem sans_font">
-    <a href="{% url 'variant_app:corpus' corpus.id %}"
-       style="font-size: 20px;">Back to text home</a>
+    <a href="{% url 'variant_app:corpus' corpus.id %}">Back to text home</a>
   </div>
-  <div class="top_elem sans_font" style="font-size: 20px; color: #222;">
+  {% elif user.is_authenticated %}
+  <div style="margin-right: 40px; display: inline;">
+    {% if is_fav %}
+    <div id="fav" class="top_elem sans_font" style="color: #d5a01b;">&#9733; Favorited</div>
+    {% else %}
+    <div id="fav" class="top_elem sans_font">&#9733; Add to favorites</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="top_elem sans_font">
     <input type="checkbox" id="cb" name="cb" checked="checked" />
     <label for="cb">Highlight variable words</label>
   </div>
-
-  {% if user.is_anonymous %}
-  {% include "registration/unregistered_warning.html" %}
-  {% endif %}
 
   <div>
     <div id="text" class="text text_font"><h2 class="text_title title_font"
@@ -40,7 +48,7 @@
       {% if texts %}
       <table class="coll_vars_block">
 	<tr>
-	  <td class="coll_vars_title sans_font">Variants for {{ corpus.corpus_name }}</td>
+	  <td class="coll_vars_title sans_font">Variants for &ldquo;{{ corpus.corpus_name }}&rdquo;</td>
 	</tr>
 	{% for text in texts %}
 	{% if not text.is_base %}

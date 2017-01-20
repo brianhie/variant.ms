@@ -7,7 +7,13 @@ from django.utils.encoding import python_2_unicode_compatible
 class Corpus(models.Model):
     user = models.ForeignKey(User, null=True, default=None, on_delete=models.CASCADE)
     corpus_name = models.CharField(max_length=100)
-    is_public = models.BooleanField(default=False)
+    author = models.CharField(max_length=100, blank=True)
+
+    is_public = models.BooleanField(default=True)
+    n_favorites = models.IntegerField(default=0)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.corpus_name
@@ -54,6 +60,8 @@ class Text(models.Model):
     corpus = models.ForeignKey(Corpus, on_delete=models.CASCADE)
     is_base = models.BooleanField(default=False)
     date = models.DateField(null=True, default=None)
+    date_end = models.DateField(null=True, default=None)
+    editor = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return self.text_name
@@ -79,3 +87,11 @@ class Token(models.Model):
     def __str__(self):
         return self.text.text_name + '_' + str(self.seq)
 
+
+@python_2_unicode_compatible
+class Profile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    favorites = models.ManyToManyField(Corpus)
+
+    def __str__(self):
+        return self.user.username

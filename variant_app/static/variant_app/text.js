@@ -1,11 +1,9 @@
 var corpus_id = "";
-
 var base_url = "";
 var base_on = false;
-
 var manual_coll_url = "";
-
 var highlight_on = false;
+var old_width = "";
 
 function text_visualization(text_url, b_url, mc_url, cid) {
     corpus_id = cid;
@@ -14,6 +12,8 @@ function text_visualization(text_url, b_url, mc_url, cid) {
     manual_coll_url = mc_url;
 
     document.addEventListener("DOMContentLoaded", function() {
+	old_width = document.getElementById("variant_head").style.maxWidth;
+
 	var var_cb = document.getElementById("var_cb");
 	if (var_cb != null)
 	    var_cb.onclick = _toggle_highlighting;
@@ -22,40 +22,10 @@ function text_visualization(text_url, b_url, mc_url, cid) {
 	if (base_cb != null)
 	    base_cb.onclick = _toggle_base;
 
-	_get(_display_content, text_url);
+	get(_display_content, text_url);
     });
 }
 
-function _get(func, url) {
-    // TODO: Add progess bar or loading icon.
-
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", url);
-    xmlhttp.onreadystatechange = function()
-    {
-        if ((xmlhttp.status == 200) && (xmlhttp.readyState == 4)) {
-            func(xmlhttp.responseText);
-        } else if (xmlhttp.status == 404) {
-	    alert("Sorry, we couldn't find your text.")
-	    console.log(xmlhttp);
-	} else if (xmlhttp.status == 500) {
-	    alert("Oops, something went wrong! Try again.")
-	    console.log(xmlhttp);
-	}
-    };
-    xmlhttp.send();
-}
-
-function _post(data, csrftoken, func, url) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-    xhr.setRequestHeader('X-CSRFToken', csrftoken);
-    
-    // send the collected data as JSON
-    xhr.send(JSON.stringify(data));    
-    xhr.onloadend = func;
-}
 
 function _var_color(variability) {
     if (!variability) {
@@ -85,12 +55,6 @@ function _content_in_elem(elem_id, content_json) {
 
 	if (word.replace(/\s+/g,'') != "") {
 	    token.prev_color = _var_color(variability);
-	    if (elem_id != "base_text") {
-		token.draggable = true;
-		token.ondragstart = _drag_token;
-		token.text_seq = seq;
-		token.id = "textSeq" + seq;
-	    }
 	} else if (word.replace(/[ \t\r]+/g, '') != "") {
 	    token.textContent = word.replace(/[ \t\r]+/g, '');
 	}
@@ -99,7 +63,12 @@ function _content_in_elem(elem_id, content_json) {
 	    token.ondragover = _drag_over_token;
 	    token.ondragleave = _drag_leave_token;
 	    token.ondrop = _drop_token;
-	} 
+	} else {
+	    token.draggable = true;
+	    token.ondragstart = _drag_token;
+	    token.text_seq = seq;
+	    token.id = "textSeq" + seq;
+	}
 
 	text_elem.appendChild(token);
     }
@@ -147,14 +116,14 @@ function _toggle_highlighting(event) {
 }
 
 function _toggle_base(event) {
-    var wrapper = document.getElementById("contain");
+    var head = document.getElementById("variant_head");
     var text_elem = document.getElementById("text");
     var base_elem = document.getElementById("base_text");
     var base_cb = document.getElementById("base_cb");
 
     if (base_on) {
-	wrapper.style.width = "55%";
-	text_elem.style.maxWidth = "99%";
+	head.style.maxWidth = old_width;
+	text_elem.style.width = "99%";
 	base_elem.removeAttribute("style");
 	var node = document.getElementById("base_text");
 	while (node.lastChild) {
@@ -162,12 +131,13 @@ function _toggle_base(event) {
 	}
 	base_cb.removeAttribute("checked");
     } else {
-	wrapper.style.width = "70%";
+	old_width = head.style.maxWidth;
+	head.style.maxWidth = "85%";
 	text_elem.style.cssFloat = "left";
-	text_elem.style.maxWidth = "48%";
-	base_elem.style.maxWidth = "48%";
+	text_elem.style.width = "48%";
+	base_elem.style.width = "48%";
 	base_cb.checked = "checked";
-	_get(_display_base, base_url);
+	get(_display_base, base_url);
     }
     base_on = !base_on;
 }
@@ -212,7 +182,9 @@ function _drop_token(event) {
     var data = Object();
     data.seq = seq;
     data.coll_token_seq = coll_token_seq;
-    _post(data, csrftoken, function() {}, manual_coll_url)
+    post(data, csrftoken, function() {}, manual_coll_url)
 
     this.style.backgroundColor = "#fff";
 }
+
+

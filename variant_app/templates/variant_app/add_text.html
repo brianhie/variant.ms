@@ -1,10 +1,9 @@
 {% extends 'variant_app/base.html' %}
 
 {% block content %}
-<div class="container">
+<div class="container tile">
 
-  <h2 class="text_title sans_font"
-      style="font-size: 35px; font-weight: normal;">Add a variant to {{ corpus.corpus_name }}</h2>
+  <h2 class="subtitle sans_font">Add a variant to &ldquo;{{ corpus.corpus_name }}&rdquo;</h2>
 
   {% if error_messages %}
   <ul class="error sans_font">

@@ -1,23 +1,39 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.template.loader import render_to_string
 from registration import signals
 from registration.backends.hmac.views import RegistrationView
+from registration.forms import RegistrationForm
 
-from .models import Corpus
+from .models import Corpus, Profile
+
+class VariantRegistrationForm(RegistrationForm):
+    # Implement case insensitive username validation.
+    def clean(self):
+        User = get_user_model()
+        username_value = self.cleaned_data.get(User.USERNAME_FIELD)
+        if username_value is not None and User.objects.filter(username__iexact=username_value).exists():
+            self.add_error(User.USERNAME_FIELD,
+                           ValidationError("A user with that username already exists."))
+
+        super(VariantRegistrationForm, self).clean()
 
 class VariantRegistrationView(RegistrationView):
     """
     Custom implementation of django-registration RegistrationView.
     """
+    form_class = VariantRegistrationForm
 
     @transaction.atomic
     def register(self, form):
-        if not self.request.user.is_anonymous:
-            return HttpResponseRedirect(reverse('registration_complete'))
-
         new_user = self.create_inactive_user(form)
+
+        profile = Profile()
+        profile.user = new_user
+        profile.save()
 
         # Handle corpuses that may have been created during
         # an initial anonymous session.
@@ -59,3 +75,4 @@ class VariantRegistrationView(RegistrationView):
                                      [user.email])
         msg.attach_alternative(message_html, "text/html")
         msg.send()
+

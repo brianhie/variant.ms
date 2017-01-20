@@ -13,27 +13,27 @@
   </head>
 
   <body>
-    <div class="header">
-      <h1 class="title title_font">Variant</h1>
+    <script src="{% static 'variant_app/resize.js' %}"></script>
+
+    <div class="header" id="variant_head">
+      <h1 class="title title_font"><a href="{% url 'home' %}">Variant</a></h1>
 
       <ul class="nav sans_font">
-
 	{% if user.is_authenticated %}
 	<li><a href="{% url 'variant_app:user_home' %}">My Home</a></li>
+	<li><a href="{% url 'variant_app:explore_home' %}">Explore</a></li>
 	<li><a href="{% url 'auth_logout' %}">Logout</a></li>
-
 	{% else %}
-	<li><a href="{% url 'home' %}">Home</a></li>
+	<li><a href="{% url 'variant_app:explore_home' %}">Explore</a></li>
 	<li><a href="{% url 'auth_login' %}">Login</a></li>
 	<li><a href="{% url 'registration_register' %}">Register</a></li>
 	{% endif %}
-
       </ul>
-    </div>
     <br />
 
     {% block content %}
     {% endblock %}
+    </div>
 
   </body>
 </html>

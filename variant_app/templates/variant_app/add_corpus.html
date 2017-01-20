@@ -1,10 +1,9 @@
 {% extends 'variant_app/base.html' %}
 
 {% block content %}
-<div class="container">
+<div class="container tile">
 
-  <h2 class="text_title sans_font"
-      style="font-size: 35px; font-weight: normal;">Add a new text</h2>
+  <h2 class="subtitle sans_font">Add a new text</h2>
 
   {% if error_messages %}
   <ul class="error sans_font">
@@ -20,11 +19,15 @@
     <input type="text" name="corpus_name" value="" />
     <br /><br />
 
+    <label>Author</label>
+    <input class="sans_font" type="text" name="author" value="" />
+    <br /><br />
+
     <label>Base text content</label>
     {% if entered %}
-    <textarea rows="30" name="content">{{ entered }}</textarea>
+    <textarea rows="20" name="content">{{ entered }}</textarea>
     {% else %}
-    <textarea rows="30" name="content" placeholder="Add content here"></textarea>
+    <textarea rows="20" name="content" placeholder="Add content here"></textarea>
     {% endif %}
 
     <br /><br />

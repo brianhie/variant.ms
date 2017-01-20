@@ -4,15 +4,26 @@
 
 {% load static %}
 <script src="{% static 'variant_app/dropdown.js' %}"></script>
+<script src="{% static 'variant_app/ajax.js' %}"></script>
+<script src="{% static 'variant_app/js.cookie.js' %}"></script>
+<script src="{% static 'variant_app/corpus.js' %}"></script>
+<script>
+  corpus_visualization("{% url 'variant_app:corpus_public' corpus.id %}", "{{ corpus.is_public }}");
+</script>
 
-<div class="container">
+<div class="container tile">
 
   <div class="top_elem sans_font">
-    <a  style="margin-right: 40px; font-size: 18px;" href="{% url 'variant_app:user_home' %}">Back to home</a>
+    <a style="margin-right: 40px" href="{% url 'variant_app:user_home' %}">Back to home</a>
+  </div>
+
+  <div class="top_elem sans_font" style="margin-right: 40px;">
+    <input type="checkbox" id="pub_cb" name="is_public_checkbox" checked="checked" />
+    <label for="pub_cb" style="font-size: 18px;">Shared</label>
   </div>
 
    <div class="dropdown">
-     <button onclick="dropdown();" class="dropbtn sans_font"><span style="color: #ddd;">&#x25BC;</span> Options</button>
+     <button onclick="dropdown();" class="dropbtn sans_font"><span style="color: #ddd;">&#x25BC;</span> More options</button>
      <div id="myDropdown" class="dropdown-content sans_font">
        <a href="#" style="color: red;"
 	  onclick="delete_corpus('{% url 'variant_app:delete_corpus' corpus.id %}')">Delete text</a>

@@ -1,27 +1,38 @@
 var corpus_id = "";
 var tokens_url = "";
 var post_word_url = "";
+var favorite_url = "";
 var last_event = null;
 var highlight_on = true;
 var variant_texts = null;
 
 var selected = null;
 
-function coll_text_visualization(text_url, t_url, pw_url, cid) {
+function coll_text_visualization(text_url, t_url, pw_url, f_url, cid) {
     corpus_id = cid;
     tokens_url = _base_tokens_url(t_url);
     post_word_url = pw_url;
+    favorite_url = f_url;
 
     document.addEventListener("DOMContentLoaded", function() {
 	var checkbox = document.getElementById("cb");
-	checkbox.onclick = _toggle_highlighting;
+	if (checkbox) {
+	    checkbox.onclick = _toggle_highlighting;
+	}
 
 	var annotation = document.getElementById("annotation");
-	variant_texts = annotation.childNodes[1];
-	annotation.innerHTML = "";
+	if (annotation) {
+	    variant_texts = annotation.childNodes[1];
+	    annotation.innerHTML = "";
+	}
 	document.body.onclick = _variant_texts_side;
 
-	_get(_display_content, text_url);
+	var favorite = document.getElementById("fav");
+	if (favorite) {
+	    favorite.onclick = _post_favorite;
+	}
+
+	get(_display_content, text_url);
     });
 }
 
@@ -31,35 +42,6 @@ function _base_tokens_url(t_url) {
     arr.pop();
     arr.pop();
     return arr.join('/');
-}
-
-function _get(func, url) {
-    // TODO: Add progess bar or loading icon.
-
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", url);
-    xmlhttp.onreadystatechange = function()
-    {
-        if ((xmlhttp.status == 200) && (xmlhttp.readyState == 4)) {
-            func(xmlhttp.responseText);
-        } else if (xmlhttp.status == 404) {
-	    alert("Sorry, we couldn't find your text.")
-	} else if (xmlhttp.status == 500) {
-	    alert("Oops, something went wrong! Try agai.")
-	}
-    };
-    xmlhttp.send();
-}
-
-function _post(data, csrftoken, func, url) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-    xhr.setRequestHeader('X-CSRFToken', csrftoken);
-    
-    // send the collected data as JSON
-    xhr.send(JSON.stringify(data));    
-    xhr.onloadend = func;
 }
 
 function _var_color(variability) {
@@ -138,7 +120,7 @@ function _display_tokens(responseText) {
 
 	var sequence_elem = document.createElement("td");
 	sequence_elem.className = "annotate_text text_font"
-	sequence_elem.onclick = _post_word_change;
+	sequence_elem.onclick = post_word_change;
 
 	for (var t = 0; t < sequence.tokens.length; t++) {
 	    var token = sequence.tokens[t];
@@ -198,7 +180,7 @@ function _load_tokens(event) {
     event.stopPropagation();
     //window.event.cancelBubble = true;
 
-    _get(_display_tokens, url);
+    get(_display_tokens, url);
 }
 
 function _toggle_highlighting(event) {
@@ -225,10 +207,10 @@ function _variant_texts_side() {
     }
 }
 
-function _post_word_change(event) {
+function post_word_change(event) {
     if (this.post_word_data) {
 	var csrftoken = Cookies.get("csrftoken");
-	_post(this.post_word_data, csrftoken, function() {}, post_word_url)
+	post(this.post_word_data, csrftoken, function() {}, post_word_url)
 	var seq = this.post_word_data.coll_token_seq;
 	document.getElementById("seq" + seq).textContent = this.post_word_data.word;
 
@@ -245,4 +227,17 @@ function _post_word_change(event) {
 	}
     }
     event.stopPropagation();
+}
+
+function _post_favorite(event) {
+    var csrftoken = Cookies.get("csrftoken");
+    post({}, csrftoken, function() {}, favorite_url)
+
+    if (this.style.color) {
+	this.removeAttribute("style");
+	this.innerHTML = "&#9733; Add to favorites";
+    } else {
+	this.style.color = "#d5a01b";
+	this.innerHTML = "&#9733; Favorited";
+    }
 }

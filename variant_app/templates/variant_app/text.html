@@ -3,12 +3,13 @@
 
 {% load static %}
 <script src="{% static 'variant_app/dropdown.js' %}"></script>
+<script src="{% static 'variant_app/ajax.js' %}"></script>
 
-<div class="coll_text_container" id="contain">
+<div class="coll_text_container tile" id="contain">
 
   <style>
     span[class^="seq"] {
-    line-height: 30px;
+    line-height: 1.6;
     cursor: default;
     }
 
@@ -23,10 +24,11 @@
     "{{ text.corpus.id }}");
   </script>
 
+  {% if user.is_authenticated and text.corpus.user == user %}
   <div class="top_elem sans_font">
-    <a style="font-size: 20px;"
-       href="{% url 'variant_app:corpus' text.corpus.id %}">Back to text home</a>
+    <a href="{% url 'variant_app:corpus' text.corpus.id %}">Back to text home</a>
   </div>
+  {% endif %}
 
   {% if not text.is_base %}
   <div class="top_elem sans_font" style="margin-right: 40px;">
@@ -34,13 +36,15 @@
     <label for="base_cb">Compare with base text</label>
   </div>
 
-  <div class="top_elem sans_font">
+  <div class="top_elem sans_font" style="margin-right: 40px;">
     <input type="checkbox" id="var_cb" name="variable_checkbox" />
     <label for="var_cb">Highlight variable words</label>
   </div>
 
-  <div class="dropdown" style="margin-left: 40px;">
-    <button onclick="dropdown();" class="dropbtn sans_font"><span style="color: #ddd;">&#x25BC;</span> More options</button>
+  <div class="dropdown">
+    <button onclick="dropdown();" class="dropbtn sans_font" style="padding: 0px;">
+      <span style="color: #ddd;">&#x25BC;</span> More options
+    </button>
     <div id="myDropdown" class="dropdown-content sans_font">
       <a href="#" style="color: red"
 	 onclick="delete_text('{% url 'variant_app:delete_text' text.id %}')">Delete variant</a>
@@ -49,15 +53,10 @@
   {% endif %}
 
 
-  {% if user.is_anonymous %}
-  {% include "registration/unregistered_warning.html" %}
-  {% endif %}
-
-  <h2 
-      class="text_title title_font">{{ text.text_name }}{% if text.is_base %}<span class="sans_font" style="font-size: 30px"> (base text)</span>{% endif %}</h2>
+  <h2 class="text_title title_font">{{ text.text_name }}{% if text.is_base %}<span class="sans_font" style="font-size: 30px"> (base text)</span>{% endif %}</h2>
 
   <div id="wrapper">
-    <div id="text" class="text text_font" style="max-width: 99%;"></div>
+    <div id="text" class="text text_font" style="width: 99%;"></div>
     <div id="base_text" class="text text_font"></div>
   </div>
 </div>
