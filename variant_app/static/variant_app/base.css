@@ -369,21 +369,21 @@ button:focus {
 }
 
 .form input[type=submit] {
-    border: none;
     width: auto;
     background: none;
     text-align: left;
-    padding: 0px;
     margin: 0px;
-    font-size: 24px;
+    font-size: 20px;
     color: black;
-}
-
-.form input[type=submit] {
     cursor: pointer;
-    padding: 14px 20px 16px 20px;
+    padding: 10px 15px 10px 15px;
     border: #bbb 1px solid;
     border-radius: 2px;
+}
+
+.form input[type=submit]:hover {
+    box-shadow: 0 2px 5px #bbb;
+    transition: box-shadow 0.1s ease-in-out;
 }
 
 .form textarea {
