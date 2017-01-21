@@ -31,9 +31,9 @@ with open('/etc/secret_key.txt') as secret_file:
 #X_FRAME_OPTIONS = 'DENY'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True#False
+DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'variant.ms' ]
 
 DEFAULT_FROM_EMAIL = 'mr.ms@variant.ms'
 

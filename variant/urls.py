@@ -23,6 +23,7 @@ from variant_app.registration_views import VariantRegistrationView
 
 urlpatterns = [
     url(r'^$', index, name='home'),
+
     url(r'^variant/', include('variant_app.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^accounts/profile/$',

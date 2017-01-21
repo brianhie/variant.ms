@@ -35,7 +35,7 @@ class VariantRegistrationView(RegistrationView):
         profile.user = new_user
         profile.save()
 
-        Query(query=corpus.preview[:100].lower()).save()
+        Query(query=new_user.username.lower()).save()
 
         # Handle corpuses that may have been created during
         # an initial anonymous session.
