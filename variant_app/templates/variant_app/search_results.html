@@ -1,0 +1,62 @@
+{% extends 'variant_app/base.html' %}
+{% block content %}
+
+<div class="tile sans_font search_bar section_head">
+  <form action="{% url 'variant_app:search_results' %}" method="post">
+    {% csrf_token %}
+    <div id="search_icon">&#8981;</div>
+    <input type="text" name="query"
+	   placeholder="Search for texts, users, or first lines..." />
+  </form>
+  <div id="search_drop" class="drop-down-content"></div>
+</div>
+
+{% if not users and not corpuses %}
+<p class="sans_font">
+  Sorry, we couldn't find anything. Try another search term.
+</p>
+{% endif%}
+
+
+{% if users %}
+<h2 class="tile section_head sans_font">Users</h2>
+<ul class="corpus_tiles">
+  {% for user in users %}
+  <li class="tile corpus_tile" style="width: auto;">
+    <a href="#">
+      <div class="tile_wrap sans_font"
+	   style="font-size: 20px; text-align: center; padding: 20px;">
+	{{ user.username }}
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif%}
+
+{% if corpuses %}
+<h2 class="tile section_head sans_font">Texts</h2>
+{% for corpus in corpuses %}
+<div class="tile search_entry">
+  <a class=""
+     href="{% url 'variant_app:coll_text' corpus.id %}">
+    <div class="sans_font" style="font-size: 16px; padding: 20px 0px 5px 0px;">
+      Collated by {{ corpus.user.username }}
+    </div>
+    <div class="title_font" style="font-size: 32px;">
+      {{ corpus.corpus_name }}
+    </div>
+    {% if corpus.author %}
+    <div class="sans_font" style="font-size: 18px; padding-bottom: 5px;">
+      by {{ corpus.author }}
+    </div>
+    {% endif %}
+    <div class="sans_font" style="font-size: 15px; font-style: italic; color: #888; padding-bottom: 20px;">
+      {{ corpus.preview }}
+    </div>
+  </a>
+</div>
+{% endfor %}
+{% endif%}
+
+{% endblock %}

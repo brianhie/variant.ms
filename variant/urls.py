@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.views.generic import RedirectView
 
 from variant_app.views import index
@@ -27,6 +28,11 @@ urlpatterns = [
     url(r'^accounts/profile/$',
         RedirectView.as_view(pattern_name='variant_app:user_home',
                              permanent=False)),
+
+    url(r'^favicon.ico$',
+        RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'),
+                             permanent=False),
+        name="favicon"),
 
     # Override different account views.
     url(r'^accounts/register/$',

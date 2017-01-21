@@ -17,23 +17,24 @@
     <script src="{% static 'variant_app/resize.js' %}"></script>
     <div class="header" style="width: 1000px;" id="variant_head">
       
-      <h1 style="padding-top: 80px; margin-bottom: 40px;">
+      <h1 style="padding-top: 80px; margin-bottom: 50px;">
 	<span class="title_font" style="font-size: 70px; margin:0px; padding: 0px;">
 	  Variant
 	</span>
-	<span class="sans_font" style="padding-left: 10px;font-size: 25px;; margin:0px;">
+	<span class="sans_font" style="padding-left: 0px; font-size: 25px; margin:0px;">
 	  A different way of interacting with literature.
 	</span>
       </h1>
 
-      <div style="margin-bottom: 50px;">
+      <div style="margin-bottom: 80px;">
 	<ul class="index_nav sans_font" style=" font-size: 28px;">
 	  <li>
 	    <a style="padding: 14px 20px 16px 20px; border: #bbb 1px solid;" class="tile"
 	       href="{% url 'variant_app:explore_home' %}">Explore now</a>
 	  </li>
-	  <li style="border: #bbb 1px solid; padding: 14px 20px 16px 20px;" class="tile">
-	    <a href="{% url 'variant_app:user_home' %}">For textual critics</a>
+	  <li>
+	    <a style="padding: 14px 20px 16px 20px; border: #bbb 1px solid;" class="tile"
+	       href="{% url 'variant_app:user_home' %}">For textual critics</a>
 	  </li>
 	</ul>
       </div>
@@ -67,7 +68,7 @@
 	  </div>
 	</div>
 	<div style="">
-	  <img  style="width: 360px; margin-left: 60px;"
+	  <img  style="max-width: 360px; margin-left: 60px; margin-top: 10px;"
 		src="{% static 'images/texts.jpg' %}" alt="Manuscript"/>
 	</div>
       </div>
@@ -75,7 +76,7 @@
       <br />
 
       <div id="explore_tutorial" style="margin-bottom: 100px;">
-	<h2 class="sans_font subtitle">Read a text with its variants at your fingertips.</h2>
+	<h2 class="sans_font subtitle">Read a text along with all its variants.</h2>
 	<div class="text_font" style="text-align: justify;">
 	  <div style="color: #444; line-height: 1.8;">
 	  <p>
@@ -102,7 +103,7 @@
 	    <p>
 	      Variant was designed to help make the collation process easier for textual critics.
 	      When you upload a base text, Variant will also let you upload variant texts.
-	      Variant will split up each new text into words, and performs the normally tedious
+	      Variant will automatically take care of the normally tedious
 	      process of comparing each word of the variant text to each word of the base text.
 	    </p>
 	    <img style="border: #ddd 1px solid; margin: 10px 0px 20px 0px;" class="tile"

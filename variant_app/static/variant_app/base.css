@@ -35,6 +35,8 @@ a {
 
 .help {
     font-size: 13px;
+    margin: 2px 0px 10px 0px;
+    color: #666;
 }
 
 .error {
@@ -379,6 +381,9 @@ button:focus {
 
 .form input[type=submit] {
     cursor: pointer;
+    padding: 14px 20px 16px 20px;
+    border: #bbb 1px solid;
+    border-radius: 2px;
 }
 
 .form textarea {
@@ -387,6 +392,7 @@ button:focus {
     border-radius: 5px;
     padding: 20px;
     font-size: 15px;
+    margin-bottom: 20px;
 }
 
 .underline:after {
@@ -501,4 +507,31 @@ button:focus {
 
 #fav:hover {
     cursor: pointer;
+}
+
+#search_icon {
+    display: inline;
+    margin-right: 10px;
+}
+
+.search_bar {
+    margin-bottom: 30px;
+}
+
+.search_bar input {
+    width: 95%;
+    font-size: 20px;
+    border: none;
+}
+
+.search_entry {
+    margin: 15px 0px 15px 0px;
+    padding: 10px 0px 10px 25px;
+    font-size: 25px;
+
+}
+
+.search_entry a {
+    text-decoration: none;
+    color: black;
 }

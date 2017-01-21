@@ -1,6 +1,9 @@
 {% extends 'variant_app/base.html' %}
-
 {% block content %}
+
+{% load static %}
+<script src="{% static 'variant_app/form.js' %}"></script>
+
 <div class="container tile">
 
   <h2 class="subtitle sans_font">Add a variant to &ldquo;{{ corpus.corpus_name }}&rdquo;</h2>
@@ -17,22 +20,66 @@
 	class="form sans_font" method="post">
     {% csrf_token %}
     <label>Variant name</label>
-    <input type="text" name="text_name" value="" />
-
-    <br /><br />
+    {% if text_name %}
+    <input type="text" name="text_name" value="{{ text_name }}" />
+    {% else %}
+    <input type="text" name="text_name" />
+    {% endif %}
+    <p class="help">e.g., Harvard edition, ed. Grierson, F167NY3</p>
+    <br />
 
     <label>Text content</label>
-    {% if entered %}
-    <textarea rows="30" name="content">{{ entered }}</textarea>
+    <p class="help">Provide the variant text you want compared to the base text.</p>
+    {% if content %}
+    <textarea rows="20" name="content">{{ content }}</textarea>
     {% else %}
-    <textarea rows="30" name="content" placeholder="Add content here"></textarea>
+    <textarea rows="20" name="content" placeholder="Add content here"></textarea>
     {% endif %}
+    <br />
 
-    <br /><br />
+    <label for="pub_cb">Date</label>
+    {% if date %}
+    <input class="formattedDate" name="date"  value="{{ date }}" />
+    {% else %}
+    <input class="formattedDate" name="date"  placeholder="(optional)" />
+    {% endif %}
+    <p class="help">e.g., 1595, 1922-04, 0386-04-24 (YYYY-MM-DD)</p>
+    <br />
 
-    <div style="display:inline-block;"><div class="underline">
-	<input class="sans_font" type="submit" value="Collate" />
-    </div></div>
+    <label for="pub_cb">Date end</label>
+    {% if date_end %}
+    <input class="formattedDate" name="date_end" value="{{ date_end }}" />
+    {% else %}
+    <input class="formattedDate" name="date_end" placeholder="(optional)" />
+    {% endif %}
+    <p class="help">
+      If you don't know an exact date for your text but want
+      to provide an approximate range, enter the end of that range here.
+    </p>
+    <br />
+
+    <label>Editor</label>
+    {% if editor %}
+    <input type="text" name="editor" value="{{ editor }}" />
+    {% else %}
+    <input type="text" name="editor" placeholder="(optional)" />
+    {% endif %}
+    <p class="help">If your variant text had an editor, enter that here 
+      (e.g., Helen Vendler, Thomas Wentworth Higginson).
+    </p>
+    <br />
+
+    <label>Description</label>
+    <p class="help">Give a short description of this variant text (1000 character max).</p>
+    {% if description %}
+    <textarea rows="6" name="description">{{ description }}</textarea>
+    {% else %}
+    <textarea rows="6" name="description" placeholder="Add description here (optional)"></textarea>
+    {% endif %}    
+    <br />
+
+    <input class="sans_font tile" type="submit" value="Collate" />
+    
   </form>
 
 </div>

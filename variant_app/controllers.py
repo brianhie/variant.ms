@@ -18,9 +18,9 @@ def create_corpus(corpus_name, content):
     corpus = Corpus(corpus_name=corpus_name)
     corpus.save()
 
-    create_text(corpus, corpus_name, content)
+    base_text = create_text(corpus, corpus_name, content)
 
-    return corpus
+    return corpus, base_text
 
 @transaction.atomic
 def create_text(corpus, text_name, content, debug=False):

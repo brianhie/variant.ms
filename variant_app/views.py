@@ -1,18 +1,26 @@
+from django.contrib.auth import get_user_model
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector, TrigramSimilarity
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import transaction
+from django.db import models, transaction
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
 from django.template import loader
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
+
+from datetime import datetime
 import json
 import re
 import time
 
-from .models import Corpus, CollText, CollToken, Text, Token, Profile
+from .models import Corpus, CollText, CollToken, Text, Token, Profile, Query
 from .forms import RegistrationForm
 import controllers
+
+################
+## Main Views ##
+################
 
 def index(request):
     return render(request, 'variant_app/index.html', {})
@@ -36,22 +44,52 @@ def user_home(request):
 
     return render(request, 'variant_app/user_dashboard.html', context)
 
+########################
+## Explore and search ##
+########################
+
 def explore_home(request):
     num_recents = 8
     num_favorites = 8
     context = {}
     try:
-        favorites = Corpus.objects.filter(is_public=True).order_by('-n_favorites', '-updated')[:num_favorites]
+        favorites = Corpus.objects.filter(
+            is_public=True, user__is_active=True
+        ).order_by('-n_favorites', '-updated')[:num_favorites]
     except Corpus.DoesNotExist:
         pass
     context['favorites'] = favorites
     try:
-        recents = Corpus.objects.filter(is_public=True).order_by('-created')[:num_recents]
+        recents = Corpus.objects.filter(
+            is_public=True, user__is_active=True
+        ).order_by('-created')[:num_recents]
     except Corpus.DoesNotExist:
         pass
     context['recents'] = recents    
 
     return render(request, 'variant_app/explore_home.html', context)
+
+def search_results(request):
+    if not 'query' in request.POST:
+        return render(request, 'variant_app/search_results.html', {})
+    query_str = request.POST['query'].strip().lower()
+
+    # Very rudimentary search.
+    # TODO: Integrate with Elasticsearch or Solr using django-haystack.
+    # http://django-haystack.readthedocs.io/en/v2.4.1/tutorial.html
+    users_limit = 3
+    User = get_user_model()
+    users = User.objects.annotate(
+        similarity=TrigramSimilarity('username', query_str),
+    ).filter(similarity__gt=0.3).order_by('-similarity')
+
+    corpuses = Corpus.objects.filter(
+        models.Q(corpus_name__icontains=query_str) |
+        models.Q(author__icontains=query_str) |
+        models.Q(preview__icontains=query_str))
+
+    context = { 'users': users, 'corpuses': corpuses }
+    return render(request, 'variant_app/search_results.html', context)
 
 ############
 ## Corpus ##
@@ -59,6 +97,8 @@ def explore_home(request):
 
 def corpus(request, corpus_id):
     corpus = get_object_or_404(Corpus, pk=corpus_id)
+    corpus.n_views += 1
+    corpus.save()
 
     if corpus.user != request.user and not corpus.is_public:
         return HttpResponseNotFound('Text not found or you do not have permissions to view this file.')
@@ -80,28 +120,47 @@ def add_corpus(request):
 
 @transaction.atomic
 def create_corpus(request):
-    name = request.POST['corpus_name'].strip()
-    if 'author' in request.POST:
-        author = request.POST['author'].strip()
-    else:
-        author = ''
-    content = request.POST['content'].strip()
+    data = post_to_dict(request)
+    name = data['corpus_name'].strip()
+    content = data['content'].strip()
+    date = parse_date(data['date'])
+    date_end = parse_date(data['date_end'])
 
+    # Error processing on the form values.
     emsg = name_error_message(name)
     if not request.user.is_anonymous:
         if Corpus.objects.filter(user__id=request.user.id, corpus_name=name).exists():
             emsg.append('You entered a name that is already in use.')
     if content == '':
         emsg.append('Content cannot be empty.')
+    emsg += date_error_message(date, date_end)
+    if len(data['description']) > 1000:
+        emsg.append('Your description is too long, please limit it to 1000 characters.')
+    data.update({ 'error_messages': emsg })
     if len(emsg) != 0:
-        return render(request, 'variant_app/add_corpus.html',
-                      { 'error_messages': emsg,
-                        'entered': request.POST['content'] })
+        return render(request, 'variant_app/add_corpus.html', data)
 
-    corpus = controllers.create_corpus(name, content)
-    if author != '':
-        corpus.author = author.strip().lower().title()
-        corpus.save()
+    corpus, base_text = controllers.create_corpus(name, content)
+
+    # Handle the form input.
+    corpus.preview = content[:2000]
+    if data['author'] != '':
+        corpus.author = data['author'].strip().title()
+    if data['description'] != '':
+        corpus.description = data['description'].strip()
+        base_text.description = data['description'].strip()
+    if data['is_public_checkbox'] == 'on':
+        corpus.is_public = True
+    else:
+        corpus.is_public = False
+    if date:
+        base_text.date = date
+    if date_end:
+        base_text.date_end = date_end
+    if data['editor'] != '':
+        base_text.editor = data['editor'].strip().title()
+    corpus.save()
+    base_text.save()
 
     # Handle corpus creation for anonymous user sessions.
     if request.user.is_anonymous:
@@ -115,16 +174,25 @@ def create_corpus(request):
         corpus.user = request.user
         corpus.save()
 
+    Query(query=corpus.corpus_name.lower()).save()
+    Query(query=corpus.preview[:100].lower()).save()
+
     return HttpResponseRedirect(reverse('variant_app:user_home'))
 
 def delete_corpus(request, corpus_id):
-    if not request.user.is_authenticated:
+    if not request.user.is_authenticated and not in_anon(request, corpus_id):
         return HttpResponseForbidden("Unauthenticated user tried to delete a corpus")
 
-    try:
-        Corpus.objects.get(pk=corpus_id, user=request.user).delete()
-    except Corpus.DoesNotExist:
-        pass
+    if in_anon(request, corpus_id):
+        try:
+            Corpus.objects.get(pk=corpus_id, user=None).delete()
+        except Corpus.DoesNotExist:
+            pass
+    else:
+        try:
+            Corpus.objects.get(pk=corpus_id, user=request.user).delete()
+        except Corpus.DoesNotExist:
+            pass
     
     return HttpResponseRedirect(reverse('variant_app:user_home'))
 
@@ -133,9 +201,6 @@ def corpus_public(request, corpus_id):
     corpus.is_public = not corpus.is_public
     corpus.save()
     return HttpResponse("Successfuly toggled corpus public status.")
-
-def has_favorited(profile, corpus_id):
-    return profile.favorites.filter(pk=corpus_id).exists()
 
 @transaction.atomic
 def corpus_favorite(request, corpus_id):
@@ -175,7 +240,9 @@ def coll_text(request, corpus_id):
         texts = Text.objects.filter(corpus__id=corpus_id)
     except Text.DoesNotExist:
         texts = []
-    context.update({ 'corpus': corpus, 'coll_text': coll_text, 'texts': texts })
+    
+    context.update({ 'corpus': corpus, 'coll_text': coll_text,
+                     'texts': texts, 'in_at': in_anon(request, coll_text.corpus.id) })
     return render(request, 'variant_app/coll_text.html', context)
 
 def coll_text_content(request, corpus_id):
@@ -205,18 +272,13 @@ def post_word(request, corpus_id):
     text_name = data['text_name']
 
     try:
-        if request.user.is_anonymous:
-            if ('anon_corpus_ids' in request.session and 
-                corpus_id in request.session['anon_corpus_ids']):
-                coll_token = CollToken.objects.get(corpus__user__is_anonymous=True,
-                                                   corpus__id=corpus_id,
-                                                   seq=coll_token_seq)
-                all_tokens = Token.objects.filter(corpus__user__is_anonymous=True,
-                                                  corpus__id=corpus_id,
-                                                  coll_token_seq=coll_token_seq)
-            else:
-                coll_token = None
-                all_tokens = []
+        if in_anon(request, corpus_id):
+            coll_token = CollToken.objects.get(corpus__user=None,
+                                               corpus__id=corpus_id,
+                                               seq=coll_token_seq)
+            all_tokens = Token.objects.filter(corpus__user=None,
+                                              corpus__id=corpus_id,
+                                              coll_token_seq=coll_token_seq)
         else:
             coll_token = CollToken.objects.get(corpus__user=request.user,
                                                corpus__id=corpus_id,
@@ -278,7 +340,8 @@ def coll_text_tokens(request, corpus_id, seq_start, seq_end, seq_center):
 def text(request, text_id):
     text = get_object_or_404(Text, pk=text_id)
     base_text = get_object_or_404(Text, corpus=text.corpus, is_base=True)
-    context = { 'text': text, 'base_text': base_text }
+    context = { 'text': text, 'base_text': base_text,
+                'in_at': in_anon(request, text.corpus.id) }
     return render(request, 'variant_app/text.html', context)
 
 def text_content(request, text_id):
@@ -289,10 +352,6 @@ def text_content(request, text_id):
 
     text_meta = {}
     text_meta['name'] = text.text_name
-    if text.date:
-        text_meta['date'] = text.date.strftime('%m/%d/%Y')
-    else:
-        text_meta['date'] = None
     text_meta['tokens'] = []
     for token in text.tokens().order_by('seq'):
         token_meta = {}
@@ -309,10 +368,15 @@ def add_text(request, corpus_id):
     context = { 'corpus': corpus }
     return render(request, 'variant_app/add_text.html', context)
 
+@transaction.atomic
 def create_text(request, corpus_id):
+    data = post_to_dict(request)
+    print(data)
     corpus = get_object_or_404(Corpus, pk=corpus_id)
-    text_name = request.POST['text_name'].strip()
-    content = request.POST['content'].strip()
+    text_name = data['text_name'].strip()
+    content = data['content'].strip()
+    date = parse_date(data['date'])
+    date_end = parse_date(data['date_end'])
 
     # Error processing on the form values.
     emsg = name_error_message(text_name)
@@ -322,25 +386,44 @@ def create_text(request, corpus_id):
         emsg.append('Text name for this corpus has already been used.')
     if content == '':
         emsg.append('Content cannot be empty.')
+    emsg += date_error_message(date, date_end)
+    if len(data['description']) > 1000:
+        emsg.append('Your description is too long, please limit it to 1000 characters.')
+    data.update({ 'corpus': corpus, 'error_messages': emsg })
     if len(emsg) != 0:
-        return render(request, 'variant_app/add_text.html',
-                      { 'corpus': corpus,
-                        'error_messages': emsg,
-                        'entered': request.POST['content'] })
+        return render(request, 'variant_app/add_text.html', data)
 
-    controllers.create_text(corpus, text_name, content)
-#    time.sleep(60)
+    text = controllers.create_text(corpus, text_name, content)
+
+    # Handle the form input.
+    if data['description'] != '':
+        text.description = data['description'].strip()
+    if date:
+        text.date = date
+    if date_end:
+        text.date_end = date_end
+    if data['editor'] != '':
+        text.editor = data['editor'].strip().title()
+    text.save()
+
+    Query(query=text.text_name.lower()).save()
 
     return HttpResponseRedirect(reverse('variant_app:corpus', args=(corpus.id,)))
 
 def delete_text(request, text_id):
     try:
-        text = Text.objects.get(pk=text_id, corpus__user=request.user)
+        text = Text.objects.get(pk=text_id)
         corpus_id = text.corpus.id
-        text.delete()
     except Text.DoesNotExist:
-        corpus_id = None
         return HttpResponseRedirect(reverse('variant_app:user_home'))
+
+    if not request.user.is_authenticated and not in_anon(request, corpus_id):
+        return HttpResponseForbidden("Unauthenticated user tried to delete a corpus")
+
+    if request.user.is_authenticated and text.corpus.user == request.user:
+        text.delete()
+    if in_anon(request, corpus_id) and text.corpus.user == None:
+        text.delete()
 
     return HttpResponseRedirect(reverse('variant_app:corpus', args=(corpus_id,)))
 
@@ -355,10 +438,19 @@ def manual_coll(request, text_id):
         return HttpResponseBadRequest("No coll_token_seq given.")
     coll_token_seq = int(data['coll_token_seq'])
 
-    try:
-        text = Text.objects.get(pk=text_id, corpus__user=request.user)
-    except Text.DoesNotExist:
-        return HttpResponseForbidden("Could not find text or incorrect permissions.")
+    if request.user.is_anonymous:
+        try:
+            text = Text.objects.get(pk=text_id, corpus__user=None)
+        except Text.DoesNotExist:
+            return HttpResponseForbidden("Could not find text or incorrect permissions.")
+        if not in_anon(request, text.corpus.id):
+            return HttpResponseForbidden("Could not find text or incorrect permissions.")
+    else:
+        try:
+            text = Text.objects.get(pk=text_id, corpus__user=request.user)
+        except Text.DoesNotExist:
+            return HttpResponseForbidden("Could not find text or incorrect permissions.")
+
     try:
         token = Token.objects.get(seq=seq, text=text)
     except Token.DoesNotExist:
@@ -386,6 +478,11 @@ def manual_coll(request, text_id):
 ## Utility functions ##
 #######################
 
+def in_anon(request, corpus_id):
+    return (request.user.is_anonymous and
+            'anon_corpus_ids' in request.session and
+            int(corpus_id) in request.session['anon_corpus_ids'])
+
 def name_error_message(name):
     emsg = []
     name = name.strip()
@@ -394,3 +491,47 @@ def name_error_message(name):
     elif len(name) > 100:
         emsg.append('Please limit the name to less than 100 characters.')
     return emsg
+
+def date_error_message(date, date_end):
+    emsg = []
+    if date == None:
+        emsg.append('Date provided is not properly formatted (YYYY-MM-DD).')
+    if date_end == None:
+        emsg.append('End date provided is not properly formatted (YYYY-MM-DD).')
+
+    if date_end:
+        if date == False:
+            emsg.append('You provided an end date but not a start date')
+        elif date_end < date:
+            emsg.append('The end date provided cannot be before the start date.')
+
+    return emsg
+
+def post_to_dict(request):
+    # Default dict function creates list, not unique values.
+    data = {}
+    for key in request.POST:
+        if 'csrf' in key:
+            continue
+        assert(not key in data)
+        data[key] = request.POST[key]
+    return data
+
+def parse_date(date_str):
+    if date_str.strip() == '':
+        return False
+
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d')
+    except ValueError:
+        try:
+            date = datetime.strptime(date_str, '%Y-%m')
+        except ValueError:
+            try:
+                date = datetime.strptime(date_str, '%Y')
+            except ValueError:
+                date = None
+    return date
+
+def has_favorited(profile, corpus_id):
+    return profile.favorites.filter(pk=corpus_id).exists()

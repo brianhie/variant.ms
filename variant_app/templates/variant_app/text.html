@@ -24,7 +24,7 @@
     "{{ text.corpus.id }}");
   </script>
 
-  {% if user.is_authenticated and text.corpus.user == user %}
+  {% if text.corpus.user == user or in_at %}
   <div class="top_elem sans_font">
     <a href="{% url 'variant_app:corpus' text.corpus.id %}">Back to text home</a>
   </div>

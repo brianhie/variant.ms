@@ -1,6 +1,9 @@
 {% extends 'variant_app/base.html' %}
-
 {% block content %}
+
+{% load static %}
+<script src="{% static 'variant_app/form.js' %}"></script>
+
 <div class="container tile">
 
   <h2 class="subtitle sans_font">Add a new text</h2>
@@ -16,25 +19,81 @@
   <form action="{% url 'variant_app:create_corpus' %}" method="post" class="form sans_font">
     {% csrf_token %}
     <label>Name</label>
-    <input type="text" name="corpus_name" value="" />
-    <br /><br />
-
-    <label>Author</label>
-    <input class="sans_font" type="text" name="author" value="" />
-    <br /><br />
+    {% if corpus_name %}
+    <input type="text" name="corpus_name" value="{{ corpus_name }}" />
+    {% else %}
+    <input type="text" name="corpus_name"/>
+    {% endif %}
+    <p class="help">e.g., HSDeath, Song of Myself</p>
+    <br />
 
     <label>Base text content</label>
-    {% if entered %}
-    <textarea rows="20" name="content">{{ entered }}</textarea>
+    <p class="help">Choose a base text that others will read by default.</p>
+    {% if content %}
+    <textarea rows="20" name="content">{{ content }}</textarea>
     {% else %}
     <textarea rows="20" name="content" placeholder="Add content here"></textarea>
     {% endif %}
+    <br />
 
+    <label>Author</label>
+    {% if author  %}
+    <input type="text" name="author" value="{{ author }}" />
+    {% else %}
+    <input type="text" name="author" placeholder="(optional)" />
+    {% endif %}
+    <p class="help">e.g., John Donne, Walt Whitman</p>
+    <br />
+
+    <label for="pub_cb">Date</label>
+    {% if date %}
+    <input class="formattedDate" name="date"  value="{{ date }}" />
+    {% else %}
+    <input class="formattedDate" name="date"  placeholder="(optional)" />
+    {% endif %}
+    <p class="help">e.g., 1595, 1922-04, 0386-04-24 (YYYY-MM-DD)</p>
+    <br />
+
+    <label for="pub_cb">Date end</label>
+    {% if date_end %}
+    <input class="formattedDate" name="date_end" value="{{ date_end }}" />
+    {% else %}
+    <input class="formattedDate" name="date_end" placeholder="(optional)" />
+    {% endif %}
+    <p class="help">
+      If you don't know an exact date for your text but want
+      to provide an approximate range, enter the end of that range here.
+    </p>
+    <br />
+
+    <label>Editor</label>
+    {% if editor %}
+    <input type="text" name="editor" value="{{ editor }}" />
+    {% else %}
+    <input type="text" name="editor" placeholder="(optional)" />
+    {% endif %}
+    <p class="help">If your base text had an editor, enter that here 
+      (e.g., Helen Vendler, Thomas Wentworth Higginson).
+    </p>
+    <br />
+
+    <label>Description</label>
+    <p class="help">Give a short description of this text (1000 character max).</p>
+    {% if description %}
+    <textarea rows="6" name="description">{{ description }}</textarea>
+    {% else %}
+    <textarea rows="6" name="description" placeholder="Add description here (optional)"></textarea>
+    {% endif %}    
+    <br />
+
+    <input type="checkbox" id="pub_cb" name="is_public_checkbox" checked="checked"
+	   style="margin: 0px; width: 0px;"/>
+
+    <label for="pub_cb">Make this text public</label>
+    <p class="help">Let others see your text. Only you can make collation changes.</p>
     <br /><br />
 
-    <div style="display:inline-block;"><div class="underline">
-	<input class="sans_font" type="submit" value="Submit" />
-    </div></div>
+    <input class="sans_font tile" type="submit" value="Submit" />
 
   </form>
 

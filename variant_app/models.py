@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
@@ -8,9 +9,14 @@ class Corpus(models.Model):
     user = models.ForeignKey(User, null=True, default=None, on_delete=models.CASCADE)
     corpus_name = models.CharField(max_length=100)
     author = models.CharField(max_length=100, blank=True)
+    description = models.TextField(default='')
+
+    preview = models.CharField(max_length=2000, default='')
+    search_vector = SearchVectorField('preview', blank=True)
 
     is_public = models.BooleanField(default=True)
     n_favorites = models.IntegerField(default=0)
+    n_views = models.IntegerField(default=0)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -62,6 +68,7 @@ class Text(models.Model):
     date = models.DateField(null=True, default=None)
     date_end = models.DateField(null=True, default=None)
     editor = models.CharField(max_length=100, blank=True)
+    description = models.TextField(default='')
 
     def __str__(self):
         return self.text_name
@@ -95,3 +102,11 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+@python_2_unicode_compatible
+class Query(models.Model):
+    query = models.CharField(max_length=100)
+    n_queries = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.query

@@ -8,7 +8,7 @@ from registration import signals
 from registration.backends.hmac.views import RegistrationView
 from registration.forms import RegistrationForm
 
-from .models import Corpus, Profile
+from .models import Corpus, Profile, Query
 
 class VariantRegistrationForm(RegistrationForm):
     # Implement case insensitive username validation.
@@ -34,6 +34,8 @@ class VariantRegistrationView(RegistrationView):
         profile = Profile()
         profile.user = new_user
         profile.save()
+
+        Query(query=corpus.preview[:100].lower()).save()
 
         # Handle corpuses that may have been created during
         # an initial anonymous session.
