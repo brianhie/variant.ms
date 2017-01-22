@@ -1,0 +1,106 @@
+
+------
+Python
+------
+
+This should all be packaged in variantenv.
+
+This app currently runs on Python 2 with the following additional modules
+(use pip install):
+django
+django-extensions
+django-registration
+jellyfish
+psycopg2
+python-dev
+python-memcached
+
+-------------------
+Database (postgres)
+-------------------
+
+For instructions on setting up Django with PostgreSQL, look here:
+https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04
+
+Installation commands (Ubuntu 14.04):
+sudo apt-get install libpq-dev postgresql postgresql-contrib
+
+Postgres commands:
+sudo su - postgres; psql
+CREATE DATABASE variant;
+CREATE USER variant_user WITH PASSWORD 'password';
+ALTER ROLE variant_user SET client_encoding TO 'utf8';
+ALTER ROLE variant_user SET default_transaction_isolation TO 'read committed';
+ALTER ROLE variant_user SET timezone TO 'UTC';
+GRANT ALL PRIVILEGES ON DATABASE variant TO variant_user;
+
+For the testing database:
+CREATE DATABASE variant_test;
+GRANT ALL PRIVILEGES ON DATABASE variant_test TO variant_user;
+
+-------------------
+Caching (memcached)
+-------------------
+
+For instructions on setting up Django with memcached for cache
+based sessions, look here:
+https://docs.djangoproject.com/en/1.10/topics/cache/
+
+In settings.py:
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
+
+
+-------------------------------
+Deployment (mod_wsgi, Apache 2)
+-------------------------------
+
+Secret key should not be hardcoded, or kept in source control. It is
+currently stored at:
+/etc/secret_key.txt
+
+For instructions on deploying Django with mod_wsgi and Apache 2, see:
+https://www.digitalocean.com/community/tutorials/how-to-serve-django-applications-with-apache-and-mod_wsgi-on-ubuntu-14-04
+https://docs.djangoproject.com/en/1.10/howto/deployment/wsgi/modwsgi/
+
+Installation commands:
+sudo apt-get install apache2 libapache2-mod-wsgi
+
+Current working Apache config files are at:
+/etc/apache2/sites-enabled/000-default.conf
+/etc/apache2/sites-enabled/default-ssl.conf
+
+Copies of these files can be found in the config/ subdirectory.
+
+-------------------------
+Deployment (static files)
+-------------------------
+
+Instructions on deploying static files can be found at:
+https://docs.djangoproject.com/en/1.10/howto/static-files/
+
+In settings.py:
+INSTALLED_APPS = [ ... 'django.contrib.staticfiles', ... ]
+STATIC_URL = '/static/'
+STATIC_ROOT = '/var/www/variant.ms/static/'
+
+Then run: python manage.py collectstatic
+
+------------------
+Deployment (HTTPS)
+------------------
+
+Certificates should not be kept in source control. They are found at:
+/etc/apache2/ssl/variant_ms.ca-bundle
+/etc/apache2/ssl/variant_ms.crt
+/etc/apache2/ssl/variant_ms.key
+
+Look at config/default-ssl.conf for how to point Apache to the certs.
+
+We are currently using Namecheap.com and Comodo Security Services as our
+CA authority. Instructions on obtaining a new cert and signing it are
+found at those websites.
