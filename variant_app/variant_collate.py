@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 This implements a version of the algorithm described by:
 Myers, Eugene M. "An O(ND) Difference Algorithm and Its Variations".
@@ -16,7 +18,21 @@ type contained in A and B.
 
 from collections import deque
 from math import ceil
+import re
 import sys
+
+punc_re = ur'\.?!,:;=…\{\}\[\]\(\)\"“”‘’\-–—―—\|'
+split_re = ur'([' + punc_re + ur']+)'
+
+def tokenize(content):
+    for a in re.split(r'(\s+)', content):
+        if a.strip() == '':
+            yield a
+            continue
+        for b in re.split(split_re,
+                          a, re.UNICODE):
+            if b != '':
+                yield b
 
 def collate(A, B, similarity, debug=False):
     result = []

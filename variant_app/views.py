@@ -371,7 +371,7 @@ def add_text(request, corpus_id):
 @transaction.atomic
 def create_text(request, corpus_id):
     data = post_to_dict(request)
-    print(data)
+
     corpus = get_object_or_404(Corpus, pk=corpus_id)
     text_name = data['text_name'].strip()
     content = data['content'].strip()

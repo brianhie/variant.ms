@@ -5,15 +5,12 @@ import jellyfish as jf
 import re
 import string
 import sys
-import unicodedata
 import variant_collate as vc
 
 from models import Corpus, CollText, Text, CollToken, Token
 
-punc_table = dict.fromkeys(i for i in xrange(sys.maxunicode)
-                           if unicodedata.category(unichr(i)).startswith('P'))
 
-#@transaction.atomic
+@transaction.atomic
 def create_corpus(corpus_name, content):
     corpus = Corpus(corpus_name=corpus_name)
     corpus.save()
@@ -38,24 +35,13 @@ def create_text(corpus, text_name, content, debug=False):
     collate(coll_text, tokens, debug=debug)
     return text
 
-def _split(content):
-    for a in re.split(r'(\s+)', content):
-        if a.strip() == '':
-            yield a
-            continue
-        for b in re.split(ur'([\.?!,:;=…\}\]\)\"”’]+$|^[\{\[\(\"“‘]+|\-–—―—\|)',
-                          a, re.UNICODE):
-#        for b in re.split(ur'(\W+)', a, re.UNICODE):
-            if b != '':
-                yield b
-
 def tokenize(text, content):
     if content == '':
         return []
     if isinstance(content, str):
         content = unicode(content, 'utf8')
     tokens = []
-    for seq, word in enumerate(_split(content)):
+    for seq, word in enumerate(vc.tokenize(content)):
         token = Token(word=word,
                       corpus=text.corpus,
                       text=text,
@@ -89,7 +75,7 @@ def _isspace(s):
     return s.isspace()
 
 def _ispunc(s):
-    return s.translate(punc_table) == ''
+    return re.sub(vc.split_re, '', s) == ''
 
 def _match_ampersand(a, b):
     if ((a == '&' and b == 'and') or
@@ -125,9 +111,15 @@ def _word_similarity_score(a, b):
         (not _ispunc(a) and _ispunc(b))):
         return 0
 
-    # Strings sound alike (approximate phonetic match).
+    # Problems with phonetic match functions segfaulting on
+    # empty strings. Also beneficial to match strings with
+    # no alpha characters to each other (e.g., line numbers).
     a_alpha = u''.join([ c for c in a if c.isalpha() ])
     b_alpha = u''.join([ c for c in b if c.isalpha() ])
+    if a_alpha == '' and b_alpha == '':
+        return 0.85
+
+    # Strings sound alike (approximate phonetic match).
     if jf.match_rating_comparison(a_alpha, b_alpha):
         return 0.9
     if jf.metaphone(a_alpha) == jf.metaphone(b_alpha):
