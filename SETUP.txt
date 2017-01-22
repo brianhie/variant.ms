@@ -38,6 +38,19 @@ For the testing database:
 CREATE DATABASE variant_test;
 GRANT ALL PRIVILEGES ON DATABASE variant_test TO variant_user;
 
+In settings.py:
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'variant',
+        'USER': 'variant_user',
+        'PASSWORD': 'password',
+        'HOST': 'localhost',
+        'PORT': '', # Leave blank for default.
+    }
+}
+
 -------------------
 Caching (memcached)
 -------------------
@@ -50,10 +63,9 @@ In settings.py:
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.1:11211',
+        'LOCATION': '127.0.0.1:11211', # memcached's default port.
     }
 }
-
 
 -------------------------------
 Deployment (mod_wsgi, Apache 2)
@@ -75,6 +87,9 @@ Current working Apache config files are at:
 /etc/apache2/sites-enabled/default-ssl.conf
 
 Copies of these files can be found in the config/ subdirectory.
+
+In settings.py:
+DEBUG = False
 
 -------------------------
 Deployment (static files)
