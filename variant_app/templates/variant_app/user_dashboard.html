@@ -20,15 +20,17 @@
     {% for corpus in favorites %}
     <li style="border: #ddd 1px solid;" class="corpus_tile">
       <a href="{% url 'variant_app:coll_text' corpus.id %}">
-	<div class="tile_wrap tile_user sans_font">
+	<div class="tile_wrap tile_user sans_font" style="padding-top: 20px;">
 	  Collated by {{ corpus.user.username }}
 	  <span style="padding-left: 4px; color: #555;">| &#9733; {{ corpus.n_favorites }}</span>
 	</div>
 	<div class="tile_wrap tile_title title_font">{{ corpus.corpus_name }}</div>
 	{% if corpus.author %}
-	<div class="tile_wrap tile_author sans_font">by {{ corpus.author }}</div>
+	<div class="tile_wrap tile_author sans_font" style="padding-bottom: 22px;">
+	  by {{ corpus.author }}
+	</div>
 	{% else %}
-	<div class="tile_wrap tile_author sans_font" style="white-space:pre-wrap;"> </div>
+	<div class="tile_wrap tile_author sans_font" style="white-space:pre-wrap; padding-bottom: 22px;"> </div>
 	{% endif %}
       </a>
     </li>

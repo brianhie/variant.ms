@@ -21,7 +21,7 @@ from math import ceil
 import re
 import sys
 
-punc_re = ur'\.?!,:;=…\{\}\[\]\(\)\"“”‘’\-–—―—\|'
+punc_re = ur'\.?!,:;=…\{\}\[\]\(\)\"“”‘\-–—―—\|'
 split_re = ur'([' + punc_re + ur']+)'
 
 def tokenize(content):

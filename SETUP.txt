@@ -103,7 +103,9 @@ INSTALLED_APPS = [ ... 'django.contrib.staticfiles', ... ]
 STATIC_URL = '/static/'
 STATIC_ROOT = '/var/www/variant.ms/static/'
 
-Then run: python manage.py collectstatic
+Then, run: python manage.py collectstatic
+
+Then, configure Apache to look for /static at STATIC_ROOT.
 
 ------------------
 Deployment (HTTPS)
