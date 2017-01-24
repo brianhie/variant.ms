@@ -9,10 +9,8 @@ class Corpus(models.Model):
     user = models.ForeignKey(User, null=True, default=None, on_delete=models.CASCADE)
     corpus_name = models.CharField(max_length=100)
     author = models.CharField(max_length=100, blank=True)
-    description = models.TextField(default='')
-
+    description = models.TextField(default='', blank=True)
     preview = models.CharField(max_length=2000, default='')
-    search_vector = SearchVectorField('preview', blank=True)
 
     is_public = models.BooleanField(default=True)
     n_favorites = models.IntegerField(default=0)
