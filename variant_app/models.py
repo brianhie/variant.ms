@@ -46,6 +46,7 @@ class CollToken(models.Model):
     word = models.TextField(default='')
     seq = models.IntegerField(default=-2)
     variability = models.FloatField(default=0.)
+    is_hidden = models.BooleanField(default=False)
 
     def __str__(self):
         return self.coll_text.text_name + '_' + str(self.seq)

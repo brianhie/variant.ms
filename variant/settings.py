@@ -24,7 +24,7 @@ with open('/etc/secret_key.txt') as secret_file:
     SECRET_KEY = secret_file.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 if not DEBUG:
     CSRF_COOKIE_SECURE = True

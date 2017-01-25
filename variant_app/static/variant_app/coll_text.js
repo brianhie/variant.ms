@@ -8,11 +8,18 @@ var variant_texts = null;
 
 var selected = null;
 
+var a_block = null;
+
 function coll_text_visualization(text_url, t_url, pw_url, f_url, cid) {
     corpus_id = cid;
     tokens_url = _base_tokens_url(t_url);
     post_word_url = pw_url;
     favorite_url = f_url;
+
+    a_block = document.createElement("div");
+    a_block.style.overflow = "auto";
+    a_block.style.maxHeight = "500px";
+    a_block.style.position = "relative";
 
     document.addEventListener("DOMContentLoaded", function() {
 	var checkbox = document.getElementById("cb");
@@ -63,12 +70,16 @@ function _content_in_elem(elem_id, content_json) {
 	var seq = content_json.tokens[t].seq;
 	var word = content_json.tokens[t].word;
 	var variability = parseFloat(content_json.tokens[t].variability);
+	var is_hidden = content_json.tokens[t].is_hidden;
 
 	var token = document.createElement("span");
 	token.id = "seq" + seq
 	token.className = "coll_token"
 	if (word.replace(/\s+/g,'') != "") {
 	    token.style.backgroundColor = _var_color(variability);
+	}
+	if (is_hidden) {
+	    token.className += " hide_token";
 	}
 	token.prev_color = token.style.backgroundColor;
 	token.textContent = word;
@@ -100,7 +111,6 @@ function _display_tokens(responseText) {
     var coll_token_seq = content_json.coll_token_seq;
 
     var sequence_list = document.createElement("table");
-    sequence_list.style.position = "relative";
     sequence_list.className = "annotate_block"
     sequence_list.onclick = function(event) { event.stopPropagation(); }
 
@@ -121,6 +131,11 @@ function _display_tokens(responseText) {
 	var sequence_elem = document.createElement("td");
 	sequence_elem.className = "annotate_text text_font"
 	sequence_elem.onclick = post_word_change;
+	sequence_elem.post_word_data = {
+	    "coll_token_seq": coll_token_seq,
+	    "corpus_id": corpus_id,
+	    "text_name": sequence.text_name,
+	};
 
 	for (var t = 0; t < sequence.tokens.length; t++) {
 	    var token = sequence.tokens[t];
@@ -128,15 +143,10 @@ function _display_tokens(responseText) {
 	    span.textContent = token.word
 	    if (token.is_center) {
 		span.style.fontWeight = "bold";
-		if (sequence_elem.post_word_data) {
+		if (sequence_elem.post_word_data.word) {
 		    sequence_elem.post_word_data.word += token.word;
 		} else {
-		    sequence_elem.post_word_data = {
-			"word": token.word,
-			"coll_token_seq": coll_token_seq,
-			"corpus_id": corpus_id,
-			"text_name": sequence.text_name,
-		    };
+		    sequence_elem.post_word_data.word = token.word;
 		}
 		if (token.is_coll) {
 		    sequence_elem.style.outline = "#444 1px solid";
@@ -148,19 +158,21 @@ function _display_tokens(responseText) {
 	sequence_list.appendChild(sequence_row);
     }
 
-    var annotation = document.getElementById("annotation");
-    annotation.appendChild(sequence_list);
+    a_block.innerHTML = "";
+    a_block.appendChild(sequence_list);
 
+    var annotation = document.getElementById("annotation");
+    annotation.appendChild(a_block);
 
     /* Logic for computing offset. */
     var a = document.getElementById("annotation");
     var c = document.getElementById("contain");
     var top =  window.pageYOffset + last_event.clientY - a.offsetTop;
-    var height = sequence_list.clientHeight;
+    var height = a_block.clientHeight;
     if (top + height > c.clientHeight - 150) { // Why 150? It's magic!
 	top = Math.max(c.clientHeight - height - 150, 0);
     }
-    sequence_list.style.top = top + "px";
+    a_block.style.top = top + "px";
 }
 
 function _load_tokens(event) {
@@ -212,7 +224,14 @@ function post_word_change(event) {
 	var csrftoken = Cookies.get("csrftoken");
 	post(this.post_word_data, csrftoken, function() {}, post_word_url)
 	var seq = this.post_word_data.coll_token_seq;
-	document.getElementById("seq" + seq).textContent = this.post_word_data.word;
+
+	if (this.post_word_data.word) {
+	    document.getElementById("seq" + seq).textContent = this.post_word_data.word;
+	    var className = document.getElementById("seq" + seq).className;
+	    document.getElementById("seq" + seq).className = className.replace(/hide_token/g, "");
+	} else {
+	    document.getElementById("seq" + seq).className += " hide_token";
+	}
 
 	// Only highlight clicked word.
 	var to_highlight = this;

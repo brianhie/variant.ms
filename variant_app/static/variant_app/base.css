@@ -112,7 +112,6 @@ a {
     overflow: auto;
 }
 
-
 .subheader {
     font-size: 45px;
     text-align: center;
@@ -249,6 +248,10 @@ a {
     background-color: #eee;
 }
 
+.hide_token {
+    color: #ddd;
+}
+
 .coll_color {
     background-color: #005b7b;
     border: none;
@@ -258,6 +261,7 @@ a {
     background-color: #3694b6;
 
 }
+
 .variant_color {
     background-color: #f2f9ff;
 }
@@ -269,7 +273,6 @@ a {
 .text_title {
     font-size: 40px;
     color: #111;
-    font-weight: 600;
 }
 
 .text {

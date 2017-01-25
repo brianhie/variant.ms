@@ -259,6 +259,7 @@ def coll_text_content(request, corpus_id):
             token_meta['variability'] = 1
         else:
             token_meta['variability'] = token.variability / (num_texts-1)
+        token_meta['is_hidden'] = token.is_hidden
         text_meta['tokens'].append(token_meta)
 
     return HttpResponse(json.dumps(text_meta))
@@ -267,7 +268,7 @@ def coll_text_content(request, corpus_id):
 @require_http_methods([ 'POST' ])
 def post_word(request, corpus_id):
     data = json.loads(request.body)
-    word = data['word']
+
     coll_token_seq = data['coll_token_seq']
     text_name = data['text_name']
 
@@ -291,7 +292,11 @@ def post_word(request, corpus_id):
         all_tokens = []
 
     if coll_token != None:
-        coll_token.word = word
+        if 'word' in data:
+            coll_token.word = data['word']
+            coll_token.is_hidden = False
+        else:
+            coll_token.is_hidden = True
         coll_token.save()
 
     for token in all_tokens:
