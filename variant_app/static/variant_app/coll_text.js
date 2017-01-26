@@ -5,9 +5,7 @@ var favorite_url = "";
 var last_event = null;
 var highlight_on = true;
 var variant_texts = null;
-
 var selected = null;
-
 var a_block = null;
 
 function coll_text_visualization(text_url, t_url, pw_url, f_url, cid) {
@@ -60,7 +58,6 @@ function _var_color(variability) {
 
 function _content_in_elem(elem_id, content_json) {
     var text_elem = document.getElementById(elem_id);
-    // Inserted HTML as string for fastest document rendering.
 
     var min_len = 10;
     var max_len = 30;
@@ -78,10 +75,10 @@ function _content_in_elem(elem_id, content_json) {
 	if (word.replace(/\s+/g,'') != "") {
 	    token.style.backgroundColor = _var_color(variability);
 	}
-	if (is_hidden) {
-	    token.className += " hide_token";
-	}
 	token.prev_color = token.style.backgroundColor;
+	if (is_hidden) {
+	    token.style.color = token.prev_color;
+	}
 	token.textContent = word;
 	token.onclick = _load_tokens;
 	token.onmouseover = _hover_highlight;
@@ -190,7 +187,6 @@ function _load_tokens(event) {
     var annotation = document.getElementById("annotation");
     annotation.innerHTML = "";
     event.stopPropagation();
-    //window.event.cancelBubble = true;
 
     get(_display_tokens, url);
 }
@@ -225,15 +221,15 @@ function post_word_change(event) {
 	post(this.post_word_data, csrftoken, function() {}, post_word_url)
 	var seq = this.post_word_data.coll_token_seq;
 
+	var token = document.getElementById("seq" + seq);
 	if (this.post_word_data.word) {
 	    document.getElementById("seq" + seq).textContent = this.post_word_data.word;
-	    var className = document.getElementById("seq" + seq).className;
-	    document.getElementById("seq" + seq).className = className.replace(/hide_token/g, "");
+	    token.style.removeProperty("color");
 	} else {
-	    document.getElementById("seq" + seq).className += " hide_token";
+	    token.style.color = token.prev_color;
 	}
 
-	// Only highlight clicked word.
+	/* Only highlight clicked word. */
 	var to_highlight = this;
 	var node = to_highlight.parentNode.parentNode.firstChild;
 	while (node) {

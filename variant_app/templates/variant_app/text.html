@@ -32,12 +32,12 @@
 
   {% if not text.is_base %}
   <div class="top_elem sans_font" style="margin-right: 40px;">
-    <input type="checkbox" id="base_cb" name="base_checkbox" />
+    <input type="checkbox" id="base_cb" name="base_checkbox"  autocomplete="off"/>
     <label for="base_cb">Compare with base text</label>
   </div>
 
   <div class="top_elem sans_font" style="margin-right: 40px;">
-    <input type="checkbox" id="var_cb" name="variable_checkbox" />
+    <input type="checkbox" id="var_cb" name="variable_checkbox" autocomplete="off" />
     <label for="var_cb">Highlight variable words</label>
   </div>
 
@@ -53,7 +53,12 @@
   {% endif %}
 
 
-  <h2 class="text_title title_font">{{ text.text_name }}{% if text.is_base %}<span class="sans_font" style="font-size: 30px"> (base text)</span>{% endif %}</h2>
+  <h2 class="text_title title_font">
+    {{ text.text_name }}
+    {% if text.is_base %}
+    <span class="sans_font" style="font-size: 30px"> (base text)</span>
+    {% endif %}
+  </h2>
 
   <div id="wrapper">
     <div id="text" class="text text_font" style="width: 99%;"></div>

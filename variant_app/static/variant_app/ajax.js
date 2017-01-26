@@ -1,21 +1,26 @@
 function get(func, url) {
     // TODO: Add progess bar or loading icon.
 
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", url);
-    xmlhttp.onreadystatechange = function()
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url);
+    xhr.onreadystatechange = function()
     {
-        if ((xmlhttp.status == 200) && (xmlhttp.readyState == 4)) {
-            func(xmlhttp.responseText);
-        } else if (xmlhttp.status == 404) {
-	    alert("Sorry, we couldn't find your text.")
-	    console.log(xmlhttp);
-	} else if (xmlhttp.status == 500) {
-	    alert("Oops, something went wrong! Try again.")
-	    console.log(xmlhttp);
+	if (xhr.readyState === 4 || xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+		func(xhr.responseText);
+            } else if (xhr.status === 403) {
+		alert("It looks like you don't have access to this text. If you do, please login.")
+		console.log(xhr);
+            } else if (xhr.status === 404) {
+		alert("Sorry, we couldn't find your text.")
+		console.log(xhr);
+	    } else if (xhr.status === 500) {
+		alert("Oops, something went wrong! Try again.")
+		console.log(xhr);
+	    }
 	}
     };
-    xmlhttp.send();
+    xhr.send();
 }
 
 function post(data, csrftoken, func, url) {
@@ -23,8 +28,22 @@ function post(data, csrftoken, func, url) {
     xhr.open("POST", url, true);
     xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     xhr.setRequestHeader('X-CSRFToken', csrftoken);
-    
-    // send the collected data as JSON
+    xhr.onloadend = function()
+    {
+	if (xhr.readyState === 4 || xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+		func(xhr.responseText);
+            } else if (xhr.status === 403) {
+		alert("Warning: It looks like you don't have access to this text. None of the changes you make will be saved. If you do, please login.")
+		console.log(xhr);
+            } else if (xhr.status === 404) {
+		alert("Sorry, we couldn't find your text.")
+		console.log(xhr);
+	    } else if (xhr.status === 500) {
+		alert("Oops, something went wrong! Try again.")
+		console.log(xhr);
+	    }
+	}
+    };
     xhr.send(JSON.stringify(data));    
-    xhr.onloadend = func;
 }

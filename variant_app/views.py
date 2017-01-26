@@ -181,7 +181,7 @@ def create_corpus(request):
 
 def delete_corpus(request, corpus_id):
     if not request.user.is_authenticated and not in_anon(request, corpus_id):
-        return HttpResponseForbidden("Unauthenticated user tried to delete a corpus")
+        return HttpResponseForbidden("Unauthenticated user tried to delete a corpus.")
 
     if in_anon(request, corpus_id):
         try:
@@ -218,7 +218,7 @@ def corpus_favorite(request, corpus_id):
     corpus.save()
     profile.save()
 
-    return HttpResponse("Successfuly favorited corpus.")
+    return HttpResponse("Successfully favorited corpus.")
 
 ###############
 ## Coll Text ##
@@ -231,7 +231,7 @@ def coll_text(request, corpus_id):
     context = {}
     if request.user != corpus.user:
         if not corpus.is_public:
-            return HttpResponseForbidden("Sorry, could not find the text you were looking for.")
+            return HttpResponseForbidden("Sorry, we could not find the text you were looking for.")
         elif not request.user.is_anonymous:
             profile = get_object_or_404(Profile, user=request.user)
             is_fav = has_favorited(profile, corpus_id)
@@ -287,17 +287,20 @@ def post_word(request, corpus_id):
             all_tokens = Token.objects.filter(corpus__user=request.user,
                                               corpus__id=corpus_id,
                                               coll_token_seq=coll_token_seq)
-    except (CollToken.DoesNotExist, Token.DoesNotExist):
-        coll_token = None
+    except CollToken.DoesNotExist:
+        # Usually means no corpus found with posting user.
+        return HttpResponseForbidden('User does not own corpus.')
+    except Token.DoesNotExist:
+        # Handle extreme edge case where a coll_token does not
+        # map to any tokens.
         all_tokens = []
 
-    if coll_token != None:
-        if 'word' in data:
-            coll_token.word = data['word']
-            coll_token.is_hidden = False
-        else:
-            coll_token.is_hidden = True
-        coll_token.save()
+    if 'word' in data:
+        coll_token.word = data['word']
+        coll_token.is_hidden = False
+    else:
+        coll_token.is_hidden = True
+    coll_token.save()
 
     for token in all_tokens:
         if token.text.text_name == text_name:
@@ -306,7 +309,7 @@ def post_word(request, corpus_id):
             token.is_base = False
         token.save()
 
-    return HttpResponse("Success")
+    return HttpResponse('Successfully changed base token.')
 
 
 def coll_text_tokens(request, corpus_id, seq_start, seq_end, seq_center):
