@@ -39,6 +39,10 @@ function _var_color(variability) {
 
 function _content_in_elem(elem_id, content_json) {
     var text_elem = document.getElementById(elem_id);
+    var elements = text_elem.getElementsByClassName("loader");
+    while(elements.length > 0){
+        elements[0].parentNode.removeChild(elements[0]);
+    }
 
     var content = "";
     for (var t = 0; t < content_json.tokens.length; t++) {
@@ -131,6 +135,10 @@ function _toggle_base(event) {
 	}
 	base_cb.removeAttribute("checked");
     } else {
+	var loader = document.createElement("div");
+	loader.className = "loader";
+	base_elem.appendChild(loader);
+
 	old_width = head.style.maxWidth;
 	head.style.maxWidth = "85%";
 	text_elem.style.cssFloat = "left";

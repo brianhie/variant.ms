@@ -280,6 +280,8 @@ def post_word(request, corpus_id):
             all_tokens = Token.objects.filter(corpus__user=None,
                                               corpus__id=corpus_id,
                                               coll_token_seq=coll_token_seq)
+        elif not in_anon(request, corpus_id):
+            return HttpResponseForbidden('User does not own corpus.')
         else:
             coll_token = CollToken.objects.get(corpus__user=request.user,
                                                corpus__id=corpus_id,
@@ -487,8 +489,9 @@ def manual_coll(request, text_id):
 #######################
 
 def in_anon(request, corpus_id):
-    return (request.user.is_anonymous and
-            'anon_corpus_ids' in request.session and
+    if not request.user.is_anonymous:
+        return False
+    return ('anon_corpus_ids' in request.session and
             int(corpus_id) in request.session['anon_corpus_ids'])
 
 def name_error_message(name):

@@ -31,11 +31,12 @@ _toggle_public = function() {
 	var csrftoken = Cookies.get("csrftoken");
 	post({}, csrftoken, function() {}, is_public_url)
 	is_public = !is_public;
-	if (is_public) {
-	    _pub_cb_check();
-	} else {
-	    _pub_cb_uncheck();
-	}
+    }
+    // Override default browser action.
+    if (is_public) {
+	_pub_cb_check();
+    } else {
+	_pub_cb_uncheck();
     }
 }
 

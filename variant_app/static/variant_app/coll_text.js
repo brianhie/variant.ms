@@ -15,7 +15,7 @@ function coll_text_visualization(text_url, t_url, pw_url, f_url, cid) {
     favorite_url = f_url;
 
     a_block = document.createElement("div");
-    a_block.style.overflow = "auto";
+    a_block.style.overflowY = "auto";
     a_block.style.maxHeight = "500px";
     a_block.style.position = "relative";
 
@@ -58,6 +58,10 @@ function _var_color(variability) {
 
 function _content_in_elem(elem_id, content_json) {
     var text_elem = document.getElementById(elem_id);
+    var elements = text_elem.getElementsByClassName("loader");
+    while(elements.length > 0){
+        elements[0].parentNode.removeChild(elements[0]);
+    }
 
     var min_len = 10;
     var max_len = 30;
@@ -159,6 +163,7 @@ function _display_tokens(responseText) {
     a_block.appendChild(sequence_list);
 
     var annotation = document.getElementById("annotation");
+    annotation.innerHTML = "";
     annotation.appendChild(a_block);
 
     /* Logic for computing offset. */
@@ -167,9 +172,10 @@ function _display_tokens(responseText) {
     var top =  window.pageYOffset + last_event.clientY - a.offsetTop;
     var height = a_block.clientHeight;
     if (top + height > c.clientHeight - 150) { // Why 150? It's magic!
-	top = Math.max(c.clientHeight - height - 150, 0);
+	a_block.style.top = Math.max(c.clientHeight - height - 150, 0) + "px";
+    } else {
+	a_block.style.top = Math.max(top - (height/3), 0) + "px";
     }
-    a_block.style.top = top + "px";
 }
 
 function _load_tokens(event) {
@@ -184,8 +190,14 @@ function _load_tokens(event) {
     var url = tokens_url + '/' + seq_start + '/' + seq_end + '/' + seq + '/';
     last_event = event;
 
+    var loader = document.createElement("div");
+    loader.style.position = "absolute";
+    loader.style.top = window.pageYOffset + last_event.clientY - 20 + "px";
+    loader.className = "loader";
     var annotation = document.getElementById("annotation");
     annotation.innerHTML = "";
+    annotation.appendChild(loader);
+
     event.stopPropagation();
 
     get(_display_tokens, url);
