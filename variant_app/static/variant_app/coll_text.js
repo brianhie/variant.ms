@@ -192,7 +192,7 @@ function _load_tokens(event) {
 
     var loader = document.createElement("div");
     loader.style.position = "absolute";
-    loader.style.top = window.pageYOffset + last_event.clientY - 20 + "px";
+    loader.style.top = window.pageYOffset + last_event.clientY - 30 + "px";
     loader.className = "loader";
     var annotation = document.getElementById("annotation");
     annotation.innerHTML = "";

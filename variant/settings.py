@@ -28,7 +28,7 @@ DEBUG = True
 
 if not DEBUG:
     CSRF_COOKIE_SECURE = True
-#    CSRF_COOKIE_HTTPONLY = True
+#    CSRF_COOKIE_HTTPONLY = True # Need this for AJAX requests.
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     SESSION_COOKIE_SECURE = True
