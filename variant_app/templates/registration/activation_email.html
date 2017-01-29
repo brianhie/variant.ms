@@ -1,10 +1,35 @@
 <!DOCTYPE html> 
+<html>
+  <body>
+    <h1 style="font-family: 'Baskerville Old Face', Baskerville, serif;
+	       font-size: 50px;
+	       margin-top: 0px;
+	       margin-bottom: 10px;">
+      Variant
+    </h1>
 
-<h1>You're almost done!</h1>
+    <p style="font-family: 'Source Sans Pro', Arial, sans-serif;
+	      margin-top: 0px;
+	      margin-bottom: 10px;
+	      font-size: 20px;
+	      color: #607d8b;">
+      You're almost done!
+    </p>
 
+    <p style="font-family: 'Source Sans Pro', Arial, sans-serif;">
+      Thanks for signing up to register a Variant account!
+    </p>
 
-<p>Thanks for signing up to register a Variant account!</p>
+    <a href="{{ site }}{% url 'registration_activate' activation_key %}">
+      Just click here to activate your account
+    </a>
 
-<a href="{{ site }}{% url 'registration_activate' activation_key %}">Just click here to activate your account</a>
+    <p>
+      Thanks,
+    </p>
+    <p>
+      Variant
+    </p>
 
-
+  </body>
+</html>
