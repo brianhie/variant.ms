@@ -152,9 +152,10 @@ a {
 
 .section_head {
     margin: 0px;
-    padding: 10px 0px 10px 25px;
+    padding: 10px 0px 10px 18px;
     font-size: 25px;
     color: #607d8b;
+    background-color: #fbfdff;
 }
 
 .elem_list {
@@ -272,7 +273,7 @@ a {
 
 .text_title {
     font-size: 40px;
-    color: #111;
+    color: #222;
 }
 
 .text {
@@ -367,8 +368,11 @@ button:focus {
     border-width: 0px 0px 1px 0px;
     border-color: #444;
     margin-left: 20px;
-    width: 250px;
     font-size: 18px;
+}
+
+.form input[type=text] {
+    width: 250px;
 }
 
 .form input[type=submit] {
@@ -496,6 +500,7 @@ button:focus {
 .tile_title {
     font-size: 25px;
     padding: 0px 25px 0px 25px;
+    color: #333;
 }
 
 .tile_author {
@@ -519,10 +524,13 @@ button:focus {
 
 .search_bar {
     margin-bottom: 30px;
+    padding: 8px 0px 10px 18px;
+    font-size: 25px;
+    color: #607d8b;
 }
 
 .search_bar input {
-    width: 95%;
+    width: 90%;
     font-size: 20px;
     border: none;
 }

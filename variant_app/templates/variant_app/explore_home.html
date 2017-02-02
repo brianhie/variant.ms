@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<div class="tile sans_font search_bar section_head">
+<div class="tile sans_font search_bar">
   <form action="{% url 'variant_app:search_results' %}" method="post">
     {% csrf_token %}
     <div id="search_icon">&#8981;</div>

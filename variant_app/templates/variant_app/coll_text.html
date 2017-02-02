@@ -42,7 +42,7 @@
 
   <div>
     <div id="text" class="text text_font"><h2 class="text_title title_font"
-					      style="padding-left: 0px;">{{ corpus.corpus_name }}</h2><div class="loader"></div></div>
+					      style="padding-left: 0px; margin-bottom: 0px;">{{ corpus.corpus_name }}</h2>{% if corpus.author %}<h3 class="sans_font" style="margin: 0px; font-size: 20px;">By {{ corpus.author }}</h3>{% endif %}<p style="margin-bottom: 30px;"></p><div class="loader"></div></div>
     <div id="annotation" class="annotate">
       {% if texts %}
       <table class="coll_vars_block">
