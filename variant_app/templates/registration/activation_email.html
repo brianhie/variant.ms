@@ -17,12 +17,10 @@
     </p>
 
     <p style="font-family: 'Source Sans Pro', Arial, sans-serif;">
-      Thanks for signing up to register a Variant account!
+      Thanks for signing up to register a Variant account! Just click the link below to activate your account:
     </p>
 
-    <a href="{{ site }}{% url 'registration_activate' activation_key %}">
-      Just click here to activate your account
-    </a>
+    {{ site }}{% url 'registration_activate' activation_key %}
 
     <p>
       Thanks,

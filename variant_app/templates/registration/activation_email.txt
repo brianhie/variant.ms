@@ -1,6 +1,6 @@
 You're almost done!
 
-Thanks for signing up to register a Variant account! Just follow the link below:
+Thanks for signing up to register a Variant account! Just click on the link below to activate your account:
 
 {{ site }}{% url 'registration_activate' activation_key %}
 

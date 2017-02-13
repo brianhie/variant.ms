@@ -149,7 +149,7 @@ def create_corpus(request):
     if data['description'] != '':
         corpus.description = data['description'].strip()
         base_text.description = data['description'].strip()
-    if data['is_public_checkbox'] == 'on':
+    if 'is_public_checkbox' in data and data['is_public_checkbox'] == 'on':
         corpus.is_public = True
     else:
         corpus.is_public = False
