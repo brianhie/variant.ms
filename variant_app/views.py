@@ -258,7 +258,7 @@ def coll_text_content(request, corpus_id):
         if num_texts <= 1:
             token_meta['variability'] = 1.
         else:
-            token_meta['variability'] = max(token.variability / (num_texts-1), 0.)
+            token_meta['variability'] = max(min(token.variability / (num_texts-1), 1.), 0.)
         token_meta['is_hidden'] = token.is_hidden
         text_meta['tokens'].append(token_meta)
 
@@ -451,6 +451,27 @@ def delete_text(request, text_id):
 
     return HttpResponseRedirect(reverse('variant_app:corpus', args=(corpus_id,)))
 
+def link_tokens(text, seq, coll_token_seq):
+    try:
+        token = Token.objects.get(seq=seq, text=text)
+    except Token.DoesNotExist:
+        return HttpResponseNotFound("Could not find token.")
+    try:
+        coll_token = CollToken.objects.get(seq=coll_token_seq, corpus=text.corpus)
+        prev_coll_token = CollToken.objects.get(seq=token.coll_token_seq, corpus=text.corpus)
+    except CollToken.DoesNotExist:
+        return HttpResponseNotFound("Could not find coll token.")
+
+    prev_coll_token.variability -= controllers.token_similarity_score(prev_coll_token, token)
+    prev_coll_token.save()
+
+    token.coll_token_seq = coll_token_seq
+    token.variability = controllers.token_similarity_score(coll_token, token)
+    token.save()
+
+    coll_token.variability += token.variability
+    coll_token.save()
+
 # Manually associate a text token with the collated text
 # tokens.
 @transaction.atomic
@@ -468,25 +489,7 @@ def manual_coll(request, text_id):
     if not isinstance(text, Text):
         return text
 
-    try:
-        token = Token.objects.get(seq=seq, text=text)
-    except Token.DoesNotExist:
-        return HttpResponseNotFound("Could not find token.")
-    try:
-        coll_token = CollToken.objects.get(seq=coll_token_seq, corpus=text.corpus)
-        prev_coll_token = CollToken.objects.get(seq=token.coll_token_seq, corpus=text.corpus)
-    except CollToken.DoesNotExist:
-        return HttpResponseNotFound("Could not find coll token.")
-
-    prev_coll_token.variability += controllers.token_similarity_score(prev_coll_token, token)
-    prev_coll_token.save()
-
-    token.coll_token_seq = coll_token_seq
-    token.variability = controllers.token_similarity_score(coll_token, token)
-    token.save()
-
-    coll_token.variability -= token.variability
-    coll_token.save()
+    link_tokens(text, seq, coll_token_seq)
 
     return HttpResponse("Successful manual collation.")
 
@@ -503,6 +506,11 @@ def manual_block(request, text_id):
     text = get_text(request, text_id)
     if not isinstance(text, Text):
         return text
+
+    if data['coll_token_start_seq'] == data['coll_token_end_seq']:
+        for seq in range(data['token_start_seq'], data['token_end_seq'] + 1):
+            link_tokens(text, seq, data['coll_token_start_seq'])
+        return HttpResponse('Successful collation.')
 
     try:
         token_start = Token.objects.get(seq=data['token_start_seq'], text=text)

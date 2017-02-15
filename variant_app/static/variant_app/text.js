@@ -5,10 +5,9 @@ var manual_coll_url = "";
 var highlight_on = false;
 var old_width = "";
 
-var block_mode = false;
-var block_data = Object();
-var block_elem = null;
+var coll_data = Object();
 var manual_block_url = "";
+var coll_color = "yellow";
 
 function text_visualization(text_url, b_url, mc_url, mb_url, cid) {
     corpus_id = cid;
@@ -28,9 +27,7 @@ function text_visualization(text_url, b_url, mc_url, mb_url, cid) {
 	if (base_cb != null)
 	    base_cb.onclick = _toggle_base;
 
-	block_elem = document.getElementById("block_mode");
-	if (block_elem != null)
-	    block_elem.onclick = _block_mode_on;
+	document.body.onclick = _coll_mode_reset;
 
 	get(_display_content, text_url);
     });
@@ -38,7 +35,7 @@ function text_visualization(text_url, b_url, mc_url, mb_url, cid) {
 
 
 function _var_color(variability) {
-    if (!variability) {
+    if (variability == null) {
 	return "#fff";
     }
     var factor = 0.45;
@@ -67,10 +64,12 @@ function _content_in_elem(elem_id, content_json) {
 	token.onmouseover = _hover_highlight;
 	token.onmouseout = _hover_unhighlight;
 
-	if (word.replace(/\s+/g,'') != "") {
+	if (word.replace(/\s+/g, "") != "") {
 	    token.prev_color = _var_color(variability);
 	} else if (word.replace(/[ \t\r]+/g, '') != "") {
 	    token.textContent = word.replace(/[ \t\r]+/g, '');
+	    token.prev_color = "#fff";
+	} else {
 	    token.prev_color = "#fff";
 	}
 
@@ -78,6 +77,7 @@ function _content_in_elem(elem_id, content_json) {
 	    token.ondragover = _drag_over_token;
 	    token.ondragleave = _drag_leave_token;
 	    token.ondrop = _drop_token;
+	    token.prev_color = "#fff";
 	} else {
 	    token.draggable = true;
 	    token.ondragstart = _drag_token;
@@ -118,17 +118,8 @@ function _hover_unhighlight(event) {
 }
 
 function _toggle_highlighting(event) {
-    var tokens = document.getElementsByTagName("span");
-    if (highlight_on) {
-	for (var t = 0; t < tokens.length; t++) {
-	    tokens[t].style.backgroundColor = "#fff";
-	}
-    } else {
-	for (var t = 0; t < tokens.length; t++) {
-	    tokens[t].style.backgroundColor = tokens[t].prev_color;
-	}
-    }
     highlight_on = !highlight_on;
+    _highlight_reset();
 }
 
 function _toggle_base(event) {
@@ -161,12 +152,6 @@ function _toggle_base(event) {
 	get(_display_base, base_url);
     }
     base_on = !base_on;
-
-    if (base_on) {
-	block_elem.style.display = "inline";
-    } else {
-	block_elem.style.display = "none";
-    }
 }
 
 function _display_base(responseText) {
@@ -215,86 +200,73 @@ function _drop_token(event) {
 }
 
 function _click_token(event) {
-    if (block_mode) {
-	// Error handling.
-	var err_msg = ""
-	if (!block_data.token_start) {
-	    if (this.parentNode.id != "text") {
-		err_msg += "Please select a word in the text, not the base text.\n";
-	    }
-	} else if (!block_data.token_end) {
-	    var start_seq = parseInt(block_data.token_start.id.replace(/textSeq/, ""));
-	    var end_seq = parseInt(this.id.replace(/textSeq/, ""));
-	    if (this.parentNode.id != "text") {
-		err_msg += "Please select a word in the text, not the base text.\n";
-	    } else if (start_seq >= end_seq) {
-		err_msg += "The end token cannot be before the start token.\n"
-	    }
-	} else if (!block_data.coll_token_start) {
-	    if (this.parentNode.id != "base_text") {
-		err_msg += "Please select a word in the base text.\n";
-	    }
-	} else if (!block_data.coll_token_end) {
-	    var start_seq = parseInt(block_data.coll_token_start.className.replace(/seq/, ""));
-	    var end_seq = parseInt(this.className.replace(/seq/, ""));
-	    if (this.parentNode.id != "base_text") {
-		err_msg += "Please select a word in the base text.\n";
-	    } else if (start_seq >= end_seq) {
-		err_msg += "The end token cannot be before the start token.\n"
-	    }
+    event.stopPropagation();
+
+    // Error handling.
+    var err_msg = ""
+    if (!coll_data.token_start) {
+	if (this.parentNode.id != "text") {
+	    err_msg += "Please select a word in the text, not the base text.\n";
 	}
-	if (err_msg != "") {
-	    alert(err_msg);
-	    return;
+    } else if (this.parentNode.id == "text") {
+    }
+    if (err_msg != "") {
+	alert(err_msg);
+	return;
+    }
+
+    // Update selected data.
+    if (!coll_data.token_start) {
+	coll_data.token_start = this;
+	this.style.backgroundColor = coll_color;
+    } else {
+	if (this == coll_data.token_start) {
+	    _coll_mode_reset();
 	}
 
-	// Update selected data.
-	if (!block_data.token_start) {
-	    block_data.token_start = this;
-	    this.style.backgroundColor = "yellow";
-	    // TODO: Prompt second word.
-	} else if (!block_data.token_end) {
-	    block_data.token_end = this;
-	    this.style.backgroundColor = "yellow";
+	if (this.parentNode.id == "text") {
+	    var start_seq = parseInt(coll_data.token_start.id.replace(/textSeq/, ""));
+	    var end_seq = parseInt(this.id.replace(/textSeq/, ""));
+	    if (start_seq < end_seq) {
+		coll_data.token_end = this;
+	    } else {
+		coll_data.token_end = coll_data.token_start;
+		coll_data.token_start = this;
+		[ start_seq, end_seq ] = [ end_seq, start_seq ]
+	    }
+
+	    _highlight_reset();
 	    var tokens = document.getElementsByTagName("span");
 	    for (var t = 0; t < tokens.length; t++) {
 		var seq = parseInt(tokens[t].id.replace(/textSeq/, ""));
 		if (seq >= start_seq && seq <= end_seq)
-		    tokens[t].style.backgroundColor = "yellow";
+		    tokens[t].style.backgroundColor = coll_color;
 	    }
-	    // TODO: Prompt third word.
-	} else if (!block_data.coll_token_start) {
-	    block_data.coll_token_start = this;
-	    this.style.backgroundColor = "yellow";
-	    // TODO: Prompt fourth word.
-	} else if (!block_data.coll_token_end) {
-	    block_data.coll_token_end = this;
+	} else {
+	    if (!coll_data.token_end)
+		coll_data.token_end = coll_data.token_start;
+	    coll_data.coll_token_start = this;
+	    coll_data.coll_token_end = this;
+	    _post_coll_data();
+	    _coll_mode_reset();
 	    // TODO: Success alert.
-	    _block_mode_off();
 	}
     }
 }
 
-function _block_mode_on() {
-    if (base_on) {
-	block_mode = true;
-	// TODO: Prompt for first word.
-    } else {
-	alert("You must be viewing both texts to create a block.");
-    }
-}
-
-function _block_mode_off() {
+function _post_coll_data() {
     var data = Object();
-    data.token_start_seq = parseInt(block_data.token_start.id.replace(/textSeq/, ""));
-    data.token_end_seq = parseInt(block_data.token_end.id.replace(/textSeq/, ""));
-    data.coll_token_start_seq = parseInt(block_data.coll_token_start.className.replace(/seq/, ""));
-    data.coll_token_end_seq = parseInt(block_data.coll_token_end.className.replace(/seq/, ""));
+    data.token_start_seq = parseInt(coll_data.token_start.id.replace(/textSeq/, ""));
+    data.token_end_seq = parseInt(coll_data.token_end.id.replace(/textSeq/, ""));
+    data.coll_token_start_seq = parseInt(coll_data.coll_token_start.className.replace(/seq/, ""));
+    data.coll_token_end_seq = parseInt(coll_data.coll_token_end.className.replace(/seq/, ""));
     console.log(data);
 
     var csrftoken = Cookies.get("csrftoken");
     post(data, csrftoken, function() {}, manual_block_url)
+}
 
+function _highlight_reset() {
     var tokens = document.getElementsByTagName("span");
     if (highlight_on) {
 	for (var t = 0; t < tokens.length; t++) {
@@ -305,8 +277,9 @@ function _block_mode_off() {
 	    tokens[t].style.backgroundColor = "#fff";
 	}
     }
+}
 
-    block_mode = false;
-    block_data = Object();
-    block_elem
+function _coll_mode_reset() {
+    _highlight_reset();
+    coll_data = Object();
 }
