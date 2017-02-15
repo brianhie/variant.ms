@@ -79,6 +79,13 @@ class Text(models.Model):
             tokens = []
         return tokens
 
+    def blocks(self):
+        try:
+            blocks = Block.objects.filter(text__id=self.id).order_by('token_start__seq')
+        except Block.DoesNotExist:
+            blocks = []
+        return blocks
+
 
 @python_2_unicode_compatible
 class Token(models.Model):
@@ -93,6 +100,24 @@ class Token(models.Model):
     def __str__(self):
         return self.text.text_name + '_' + str(self.seq)
 
+
+@python_2_unicode_compatible
+class Block(models.Model):
+    corpus = models.ForeignKey(Corpus, on_delete=models.CASCADE)
+    text = models.ForeignKey(Text, on_delete=models.CASCADE)
+    token_start = models.ForeignKey(Token,
+                                    related_name='%(app_label)s_%(class)s_start')
+    token_end = models.ForeignKey(Token, default=None, blank=True,
+                                  related_name='%(app_label)s_%(class)s_end')
+    coll_token_start = models.ForeignKey(CollToken,
+                                         related_name='%(app_label)s_%(class)s_start')
+    coll_token_end = models.ForeignKey(CollToken, default=None, blank=True,
+                                       related_name='%(app_label)s_%(class)s_end')
+
+    def __str__(self):
+        return (self.text.text_name + '_' +
+                str(self.token_start) + ':' + str(self.token_end) + '->' +
+                str(self.coll_token_start) + ':' + str(self.coll_token_end))
 
 @python_2_unicode_compatible
 class Profile(models.Model):

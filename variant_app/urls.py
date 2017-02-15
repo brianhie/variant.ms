@@ -34,4 +34,5 @@ urlpatterns = [
     url(r'^text/(?P<corpus_id>[0-9]+)/post/$', views.create_text, name='create_text'),
     url(r'^text/(?P<text_id>[0-9]+)/delete/$', views.delete_text, name='delete_text'),
     url(r'^text/(?P<text_id>[0-9]+)/coll/$', views.manual_coll, name='manual_coll'),
+    url(r'^text/(?P<text_id>[0-9]+)/block/$', views.manual_block, name='manual_block'),
 ]

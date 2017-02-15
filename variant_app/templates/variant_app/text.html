@@ -21,6 +21,7 @@
     text_visualization("{% url 'variant_app:text_content' text.id %}",
     "{% url 'variant_app:text_content' base_text.id %}",
     "{% url 'variant_app:manual_coll' text.id %}",
+    "{% url 'variant_app:manual_block' text.id %}",
     "{{ text.corpus.id }}");
   </script>
 
@@ -39,6 +40,10 @@
   <div class="top_elem sans_font" style="margin-right: 40px;">
     <input type="checkbox" id="var_cb" name="variable_checkbox" autocomplete="off" />
     <label for="var_cb">Highlight variable words</label>
+  </div>
+
+  <div class="top_elem sans_font" style="margin-right: 40px; display: none;" id="block_mode">
+    <a href="#">Create a block</a>
   </div>
 
   <div class="dropdown">

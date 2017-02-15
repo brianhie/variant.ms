@@ -14,7 +14,7 @@ import json
 import re
 import time
 
-from .models import Corpus, CollText, CollToken, Text, Token, Profile, Query
+from .models import Corpus, CollText, CollToken, Text, Token, Block, Profile, Query
 from .forms import RegistrationForm
 import controllers
 
@@ -256,9 +256,9 @@ def coll_text_content(request, corpus_id):
         token_meta['word'] = token.word
         token_meta['seq'] = token.seq
         if num_texts <= 1:
-            token_meta['variability'] = 1
+            token_meta['variability'] = 1.
         else:
-            token_meta['variability'] = token.variability / (num_texts-1)
+            token_meta['variability'] = max(token.variability / (num_texts-1), 0.)
         token_meta['is_hidden'] = token.is_hidden
         text_meta['tokens'].append(token_meta)
 
@@ -280,8 +280,6 @@ def post_word(request, corpus_id):
             all_tokens = Token.objects.filter(corpus__user=None,
                                               corpus__id=corpus_id,
                                               coll_token_seq=coll_token_seq)
-        elif not in_anon(request, corpus_id):
-            return HttpResponseForbidden('User does not own corpus.')
         else:
             coll_token = CollToken.objects.get(corpus__user=request.user,
                                                corpus__id=corpus_id,
@@ -347,6 +345,8 @@ def coll_text_tokens(request, corpus_id, seq_start, seq_end, seq_center):
 ## Text ##
 ##########
 
+# Main text view, includes text and base_text in its
+# context.
 def text(request, text_id):
     text = get_object_or_404(Text, pk=text_id)
     base_text = get_object_or_404(Text, corpus=text.corpus, is_base=True)
@@ -354,6 +354,8 @@ def text(request, text_id):
                 'in_at': in_anon(request, text.corpus.id) }
     return render(request, 'variant_app/text.html', context)
 
+# Get a JSON object with the complete list of tokens
+# and blocks for a given text.
 def text_content(request, text_id):
     text = get_object_or_404(Text, pk=text_id)
 
@@ -363,21 +365,31 @@ def text_content(request, text_id):
     text_meta = {}
     text_meta['name'] = text.text_name
     text_meta['tokens'] = []
-    for token in text.tokens().order_by('seq'):
+    for token in text.tokens():
         token_meta = {}
         token_meta['word'] = token.word
         token_meta['seq'] = token.seq
         token_meta['coll_token_seq'] = token.coll_token_seq
         token_meta['variability'] = token.variability
         text_meta['tokens'].append(token_meta)
+    text_meta['blocks'] = []
+    for block in text.blocks():
+        block_meta = {}
+        block_meta['token_start_seq'] = block.token_start.seq
+        block_meta['token_end_seq'] = block.token_end.seq
+        block_meta['coll_token_start_seq'] = block.coll_token_start.seq
+        block_meta['coll_token_end_seq'] = block.coll_token_end.seq
+        text_meta['blocks'].append(block_meta)
 
     return HttpResponse(json.dumps(text_meta))
 
+# Form view for adding a new text.
 def add_text(request, corpus_id):
     corpus = get_object_or_404(Corpus, pk=corpus_id)
     context = { 'corpus': corpus }
     return render(request, 'variant_app/add_text.html', context)
 
+# The form for creating a new text posts to this view.
 @transaction.atomic
 def create_text(request, corpus_id):
     data = post_to_dict(request)
@@ -420,6 +432,8 @@ def create_text(request, corpus_id):
 
     return HttpResponseRedirect(reverse('variant_app:corpus', args=(corpus.id,)))
 
+# Delete a text, and also makes sure that only a text
+# owner can delete a text.
 def delete_text(request, text_id):
     try:
         text = Text.objects.get(pk=text_id)
@@ -437,10 +451,12 @@ def delete_text(request, text_id):
 
     return HttpResponseRedirect(reverse('variant_app:corpus', args=(corpus_id,)))
 
+# Manually associate a text token with the collated text
+# tokens.
 @transaction.atomic
 @require_http_methods([ 'POST' ])
 def manual_coll(request, text_id):
-    data = json.loads(request.body);
+    data = json.loads(request.body)
     if not 'seq' in data:
         return HttpResponseBadRequest("No seq given.")
     seq = int(data['seq'])
@@ -448,18 +464,9 @@ def manual_coll(request, text_id):
         return HttpResponseBadRequest("No coll_token_seq given.")
     coll_token_seq = int(data['coll_token_seq'])
 
-    if request.user.is_anonymous:
-        try:
-            text = Text.objects.get(pk=text_id, corpus__user=None)
-        except Text.DoesNotExist:
-            return HttpResponseForbidden("Could not find text or incorrect permissions.")
-        if not in_anon(request, text.corpus.id):
-            return HttpResponseForbidden("Could not find text or incorrect permissions.")
-    else:
-        try:
-            text = Text.objects.get(pk=text_id, corpus__user=request.user)
-        except Text.DoesNotExist:
-            return HttpResponseForbidden("Could not find text or incorrect permissions.")
+    text = get_text(request, text_id)
+    if not isinstance(text, Text):
+        return text
 
     try:
         token = Token.objects.get(seq=seq, text=text)
@@ -471,18 +478,46 @@ def manual_coll(request, text_id):
     except CollToken.DoesNotExist:
         return HttpResponseNotFound("Could not find coll token.")
 
-    prev_coll_token.variability -= controllers.token_similarity_score(prev_coll_token, token)
+    prev_coll_token.variability += controllers.token_similarity_score(prev_coll_token, token)
     prev_coll_token.save()
 
     token.coll_token_seq = coll_token_seq
     token.variability = controllers.token_similarity_score(coll_token, token)
     token.save()
 
-    coll_token.variability += token.variability
+    coll_token.variability -= token.variability
     coll_token.save()
 
     return HttpResponse("Successful manual collation.")
 
+@transaction.atomic
+@require_http_methods([ 'POST' ])
+def manual_block(request, text_id):
+    data = json.loads(request.body)
+    if (not 'token_start_seq' in data or
+        not 'token_end_seq' in data or
+        not 'coll_token_start_seq' in data or
+        not 'coll_token_end_seq' in data):
+        return HttpResponseBadRequest("Need to provide four seqs to create block.")
+
+    text = get_text(request, text_id)
+    if not isinstance(text, Text):
+        return text
+
+    try:
+        token_start = Token.objects.get(seq=data['token_start_seq'], text=text)
+        token_end = Token.objects.get(seq=data['token_end_seq'], text=text)
+        coll_token_start = CollToken.objects.get(seq=data['coll_token_start_seq'], corpus=text.corpus)
+        coll_token_end = CollToken.objects.get(seq=data['coll_token_end_seq'], corpus=text.corpus)
+    except Token.DoesNotExist, CollToken.DoesNotExist:
+        return HttpResponseNotFound("Could not find one or more of the block tokens.")
+
+    block = Block(corpus=text.corpus, text=text,
+                  token_start=token_start, token_end=token_end,
+                  coll_token_start=coll_token_start, coll_token_end=coll_token_end)
+    block.save()
+
+    return HttpResponse('Successful block creation.')
 
 #######################
 ## Utility functions ##
@@ -546,3 +581,18 @@ def parse_date(date_str):
 
 def has_favorited(profile, corpus_id):
     return profile.favorites.filter(pk=corpus_id).exists()
+
+def get_text(request, text_id):
+    if request.user.is_anonymous:
+        try:
+            text = Text.objects.get(pk=text_id, corpus__user=None)
+        except Text.DoesNotExist:
+            return HttpResponseForbidden("Could not find text or incorrect permissions.")
+        if not in_anon(request, text.corpus.id):
+            return HttpResponseForbidden("Could not find text or incorrect permissions.")
+    else:
+        try:
+            text = Text.objects.get(pk=text_id, corpus__user=request.user)
+        except Text.DoesNotExist:
+            return HttpResponseForbidden("Could not find text or incorrect permissions.")
+    return text
