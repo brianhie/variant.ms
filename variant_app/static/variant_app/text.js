@@ -7,7 +7,7 @@ var old_width = "";
 
 var coll_data = Object();
 var manual_block_url = "";
-var coll_color = "yellow";
+var coll_color = "#ADDF26";
 
 function text_visualization(text_url, b_url, mc_url, mb_url, cid) {
     corpus_id = cid;
@@ -168,7 +168,7 @@ function _drag_token(event) {
 
 function _drag_over_token(event) {
     event.preventDefault();
-    this.style.backgroundColor = "#ADDF26";
+    this.style.backgroundColor = coll_color;
 }
 
 function _drag_leave_token(event) {
@@ -176,20 +176,26 @@ function _drag_leave_token(event) {
     this.style.backgroundColor = "#fff";
 }
 
+function _rewire_display(seq, coll_token_seq, prev_coll_token_seq) {
+    var text_elem = document.getElementById("textSeq" + seq);
+    if (prev_coll_token_seq != undefined) {
+	var words = document.getElementsByClassName("seq" + prev_coll_token_seq);
+	for (var w = 0; w < words.length; w++) {
+	    words[w].style.borderBottom = "none";
+	}
+    }
+    text_elem.className = "seq" + coll_token_seq;
+}
+
 function _drop_token(event) {
     event.preventDefault();
-    var seq = event.dataTransfer.getData("seq");
-    var text_elem = document.getElementById("textSeq" + seq);
-    var words = document.getElementsByClassName("seq" + event.dataTransfer.getData("prev_coll_token_seq"));
-    for (var w = 0; w < words.length; w++) {
-	words[w].style.borderBottom = "none";
-    }
-    
-    var coll_token_seq = this.className.replace(/seq/, "");
     /* Update display. */
-    text_elem.className = "seq" + coll_token_seq;
+    var seq = event.dataTransfer.getData("seq");
+    var coll_token_seq = this.className.replace(/seq/, "");
+    _rewire_display(seq, coll_token_seq,
+		    event.dataTransfer.getData("prev_coll_token_seq"));
+
     /* Update changes in database. */
-    
     var csrftoken = Cookies.get("csrftoken");
     var data = Object();
     data.seq = seq;
@@ -245,11 +251,13 @@ function _click_token(event) {
 	} else {
 	    if (!coll_data.token_end)
 		coll_data.token_end = coll_data.token_start;
+	    this.style.backgroundCOlor = coll_color;
 	    coll_data.coll_token_start = this;
 	    coll_data.coll_token_end = this;
 	    _post_coll_data();
 	    _coll_mode_reset();
-	    // TODO: Success alert.
+	    alert('Saving your change', '<div class="loader" style="margin: auto;"></div>',
+		 { confirm: false });
 	}
     }
 }
@@ -260,10 +268,14 @@ function _post_coll_data() {
     data.token_end_seq = parseInt(coll_data.token_end.id.replace(/textSeq/, ""));
     data.coll_token_start_seq = parseInt(coll_data.coll_token_start.className.replace(/seq/, ""));
     data.coll_token_end_seq = parseInt(coll_data.coll_token_end.className.replace(/seq/, ""));
-    console.log(data);
 
     var csrftoken = Cookies.get("csrftoken");
-    post(data, csrftoken, function() {}, manual_block_url)
+    post(data, csrftoken, function() {
+	for (var seq = data.token_start_seq; seq <= data.token_end_seq; seq++) {
+	    _rewire_display(seq, data.coll_token_start_seq);
+	}
+	setTimeout(function(){ window.smile_alert.element.style.display = "none"; }, 400);
+    }, manual_block_url)
 }
 
 function _highlight_reset() {

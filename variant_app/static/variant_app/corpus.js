@@ -20,24 +20,40 @@ corpus_visualization = function(pub_url, is_p) {
 }
 
 _toggle_public = function() {
+    var title_msg = "";
     var conf_msg = "";
     if (is_public) {
-	conf_msg = "Are you sure you want to make this text private? Users who have favorited your text will no longer be able to see it.";
+	title_msg = "Are you sure you want to make this text private?"
+	conf_msg = "Users who have favorited your text will no longer be able to see it.";
     } else {
-	conf_msg = "Users who search for this text will be now be able to see it!"
+	title_msg = "Share this text!"
+	conf_msg = "Users who search for this text will be now be able to see it."
     }
-    var ok = confirm(conf_msg);
-    if (ok) {
-	var csrftoken = Cookies.get("csrftoken");
-	post({}, csrftoken, function() {}, is_public_url)
-	is_public = !is_public;
+    
+    var options = {
+	cancel: true,
+	cancelCallBack: function() {
+	    // Override default browser action.
+	    if (is_public) {
+		_pub_cb_check();
+	    } else {
+		_pub_cb_uncheck();
+	    }
+	},
+	confirmCallBack: function() {
+	    var csrftoken = Cookies.get("csrftoken");
+	    post({}, csrftoken, function() {}, is_public_url)
+	    is_public = !is_public;
+
+	    // Override default browser action.
+	    if (is_public) {
+		_pub_cb_check();
+	    } else {
+		_pub_cb_uncheck();
+	    }
+	}
     }
-    // Override default browser action.
-    if (is_public) {
-	_pub_cb_check();
-    } else {
-	_pub_cb_uncheck();
-    }
+    alert(title_msg, conf_msg, options);
 }
 
 _pub_cb_check = function() {
@@ -48,6 +64,6 @@ _pub_cb_check = function() {
 
 _pub_cb_uncheck = function() {
     if (pub_cb) {
-	pub_cb.removeAttribute("checked");
+	pub_cb.checked = false;
     }
 }
