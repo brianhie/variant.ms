@@ -7,7 +7,7 @@ var old_width = "";
 
 var coll_data = Object();
 var manual_block_url = "";
-var coll_color = "#ADDF26";
+var coll_color = "#9AE0FF";
 
 function text_visualization(text_url, b_url, mc_url, mb_url, cid) {
     corpus_id = cid;
@@ -208,6 +208,9 @@ function _drop_token(event) {
 function _click_token(event) {
     event.stopPropagation();
 
+    if (!base_on)
+	return
+
     // Error handling.
     var err_msg = ""
     if (!coll_data.token_start) {
@@ -228,6 +231,7 @@ function _click_token(event) {
     } else {
 	if (this == coll_data.token_start) {
 	    _coll_mode_reset();
+	    return;
 	}
 
 	if (this.parentNode.id == "text") {
