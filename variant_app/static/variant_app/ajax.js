@@ -9,13 +9,15 @@ function get(func, url) {
             if (xhr.status === 200) {
 		func(xhr.responseText);
             } else if (xhr.status === 403) {
-		alert("It looks like you don't have access to this text. If you do, please login.")
+		alert("Access denied",
+		      "It looks like you don't have access to this text. If you do, please login.")
 		console.log(xhr);
             } else if (xhr.status === 404) {
-		alert("Sorry, we couldn't find your text.")
+		alert("Not found", "Sorry, we couldn't find your text.")
 		console.log(xhr);
 	    } else if (xhr.status === 500) {
-		alert("Oops, something went wrong! Try again.")
+		alert("Oops, something went wrong!",
+		      "Reload the page and try again. If the problem persists, contact us.")
 		console.log(xhr);
 	    }
 	}
@@ -37,10 +39,11 @@ function post(data, csrftoken, func, url) {
 		//alert("Warning: It looks like you don't have access to this text. None of the changes you make will be saved. If you do, please login.")
 		console.log(xhr);
             } else if (xhr.status === 404) {
-		alert("Sorry, we couldn't find your text.")
+		alert("Not found", "Sorry, we couldn't find your text.");
 		console.log(xhr);
-	    } else if (xhr.status === 500) {
-		alert("Oops, something went wrong! Try again.")
+	    } else if (xhr.status === 400 || xhr.status === 500) {
+		alert("Oops, something went wrong!",
+		      "Reload the page and try again. If the problem persists, contact us.")
 		console.log(xhr);
 	    }
 	}

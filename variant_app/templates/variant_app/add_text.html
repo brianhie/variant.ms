@@ -3,6 +3,20 @@
 
 {% load static %}
 <script src="{% static 'variant_app/form.js' %}"></script>
+<script>
+function collate_loader() {
+    var options = {
+        delay: 1000,
+	confirm: false,
+    }
+    alert('We\'re collating your text!',
+          '<div class="loader" style="margin: auto;"></div>' +
+	  '<p>Please don\'t refresh or exit the page. <br/><br/>' +
+	  'For longer texts, this could take up to a few minutes. ' +
+	  'We appreciate your patience while we are busy working.</p>',
+	  options);
+}
+</script>
 
 <div class="container tile">
 
@@ -78,7 +92,7 @@
     {% endif %}    
     <br />
 
-    <input class="sans_font tile" type="submit" value="Collate" />
+    <input class="sans_font tile" type="submit" onclick="collate_loader();" value="Collate" />
     
   </form>
 
