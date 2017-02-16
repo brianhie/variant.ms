@@ -1,0 +1,150 @@
+{% extends 'variant_app/base.html' %}
+
+{% block content %}
+
+{% load static %}
+
+<div class="container tile">
+  
+  <p class="subtitle sans_font" style="font-size: 45px; margin-top: 10px;">
+    Textual collation in four easy steps.
+  </p>
+
+  <p class="subtitle sans_font" style="padding: 10px 0px 10px 0px;">
+    Step 1: Upload a base text.
+  </p>
+  <ol class="text_font doc_text">
+    <li>
+      First, <a href="{% url 'auth_login' %}">login</a> to Variant.
+      If you don&rsquo;t have an account, you can <a href="{% url 'registration_register' %}">register</a>
+      here.
+    </li>
+    <li>
+      Next, click on the <span class="sans_font doc_inline">My Home</span>
+      tab on the top left of the screen.
+    </li>
+    <li>
+    Under <span class="sans_font doc_inline">My Texts</span>, click on
+    the <span class="sans_font doc_inline">+ Add a new text</span> link.
+    </li>
+    <li>
+      You should see a form that looks like this: <br/><br/>
+      <img src="{% static 'images/add_base_form.jpg' %}" alt="<add_base_form.jpg>" />
+      <br/><br/>
+      The text content you enter here will be the version of the
+      text that gets compared with each variant text you add in the future,
+      which is why we refer to it as the base text.
+    </li>
+    <li>
+      Click on the <span class="sans_font doc_inline">Submit</span> button
+      to add the base text!
+    </li>
+  </ol>
+
+  <p class="subtitle sans_font" style="padding: 10px 0px 10px 0px;">
+    Step 2: Upload variant texts.
+  </p>
+  <ol class="text_font doc_text">
+    <li>
+      Once you&rsquo;ve added a base text, you should see an icon with the
+      text&rsquo;s name show up under <span class="sans_font doc_inline">My Texts</span>:
+      <br/><br/>
+      <img src="{% static 'images/text_icon.jpg' %}" alt="<text_icon.jpg>" /><br/><br/>
+      Click on that icon to go to that text&rsquo;s home page.
+    </li>
+    <li>
+      To add a variant, click on the <span class="sans_font doc_inline">+ Add a variant</span>
+      link.
+    </li>
+    <li>
+      You should see a form similar to the one you used to upload a base
+      text.  Add the variant text&rsquo;s content here: <br/><br/>
+      <img src="{% static 'images/add_variant_form.jpg' %}" alt="<add_variant_form.jpg>" /><br/><br/>
+    </li>
+    <li>
+      Click on the <span class="sans_font doc_inline">Collate</span> button
+      to collate the variant text with the base text.  Depending on the size
+      of your text, this could take up to a couple minutes, during which
+      you should not refresh or close the browser window.
+    </li>
+  </ol>
+
+  <p class="subtitle sans_font" style="padding: 10px 0px 10px 0px;">
+    Step 3: Make manual collation changes (if needed).
+  </p>
+  <ol class="text_font doc_text">
+    <li>
+      In the home page for you text, click on the light blue icon with
+      the name you provided for your variant.
+    </li>
+    <li>
+      Select the
+      <span class="sans_font doc_inline">Compare with base text</span>
+      checkbox (if it is not already checked by default)
+      to view the variant text and the base text side-by-side.
+    </li>
+    <li>
+      Click the <span class="sans_font doc_inline">Highlight variable words</span>
+      checkbox to highlight places where Variant matched two very different
+      words.
+    </li>
+    <li>
+      Sometimes, Variant&rsquo;s matches do not correspond to actual manuscript
+      variants, but are due to quirks in our matching procedure. To make a manual
+      match, just click on a word in the variant text, then click on the corresponding
+      word in the base text.  That&rsquo;s it! <br/><br/>
+      <img src="{% static 'images/single_match.gif' %}" alt="<single_match.gif>" /><br/><br/>
+    </li>
+    <li>
+      If you want to match a sequence of words from the variant text to a single word
+      in the base text, just click on the first and last words in the sequence and then
+      click on the corresponding word in the base text. <br/><br/>
+      <img src="{% static 'images/range_match.gif' %}" alt="<range_match.gif>" /><br/><br/>
+    </li>
+    <li>
+      You can also make a match between words by dragging the variant word over the
+      base text word.<br/><br/>
+      <img src="{% static 'images/coll_text.gif' %}" alt="<coll_text.gif>" /><br/><br/>
+    </li>
+  </ol>
+
+  <p class="subtitle sans_font" style="padding: 10px 0px 10px 0px;">
+    Step 4: Choose which variant to use in the collated text.
+  </p>
+  <ol class="text_font doc_text">
+    <li>
+      Back on the home page for your text, click the dark blue
+      <span class="sans_font doc_inline">View collated text</span> icon.
+    </li>
+    <li>
+      Click on a word and a list of variants should show up on the right
+      side of the page:<br/><br/>
+      <img src="{% static 'images/text.jpg' %}" alt="<text.jpg>" /><br/><br/>
+    </li>
+    <li>
+      If you want to use another variant in the collated text, just click
+      on that variant and the changes should be saved automatically.
+    </li>
+  </ol>
+
+  <p class="subtitle sans_font" style="padding: 10px 0px 10px 0px;">
+    That&rsquo;s it!
+  </p>
+  <p class="text_font doc_text">
+    You can repeat the above steps to collate additional texts and variants,
+    and Variant provides and easy and beautiful way to share and visualize
+    your hard collation work. Happy collating!
+  </p>
+
+  <p class="subtitle sans_font" style="padding: 10px 0px 10px 0px;">
+    More questions?
+  </p>
+  <p class="text_font doc_text">
+    Variant is still a very new site, so we&rsquo;d appreciate your feedback.
+    Send us an email with questions, bug reports, and feature requests at
+    <i>brianhie at stanford dot edu</i>.
+  </p>
+
+</div>
+
+{% endblock %}
