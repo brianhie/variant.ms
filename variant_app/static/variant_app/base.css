@@ -288,6 +288,7 @@ a {
 .doc_text {
     font-size: 16px;
     color: #404040;
+    margin: 0px 0px 40px 0px;
 }
 
 .doc_text li {
