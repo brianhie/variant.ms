@@ -276,7 +276,7 @@ def post_word(request, corpus_id):
     text_name = data['text_name']
 
     try:
-        if in_anon(request, corpus_id):
+        if request.user.is_anonymous:
             coll_token = CollToken.objects.get(corpus__user=None,
                                                corpus__id=corpus_id,
                                                seq=coll_token_seq)
