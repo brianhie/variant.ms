@@ -10,7 +10,7 @@ function get(func, url) {
 		func(xhr.responseText);
             } else if (xhr.status === 403) {
 		alert("Access denied",
-		      "It looks like you don't have access to this text. If you do, please login.")
+		      "It looks like you don't have permission to make changes to this text. If you do, please login.")
 		console.log(xhr);
             } else if (xhr.status === 404) {
 		alert("Not found", "Sorry, we couldn't find your text.")
@@ -36,7 +36,8 @@ function post(data, csrftoken, func, url) {
             if (xhr.status === 200) {
 		func(xhr.responseText);
             } else if (xhr.status === 403) {
-		//alert("Warning: It looks like you don't have access to this text. None of the changes you make will be saved. If you do, please login.")
+		alert("Access denied",
+		      "It looks like you don't have permission to make changes to this text. If you do, please login.")
 		console.log(xhr);
             } else if (xhr.status === 404) {
 		alert("Not found", "Sorry, we couldn't find your text.");

@@ -278,7 +278,7 @@ function _post_coll_data() {
 	for (var seq = data.token_start_seq; seq <= data.token_end_seq; seq++) {
 	    _rewire_display(seq, data.coll_token_start_seq);
 	}
-	setTimeout(function(){ window.smile_alert.element.style.display = "none"; }, 400);
+	setTimeout(function(){ window.smile_alert.element.style.display = "none"; }, 300);
     }, manual_block_url)
 }
 

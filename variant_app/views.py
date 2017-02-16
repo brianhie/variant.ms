@@ -44,6 +44,9 @@ def user_home(request):
 
     return render(request, 'variant_app/user_dashboard.html', context)
 
+def doc(request):
+    return render(request, 'variant_app/guide.html', {})
+
 ########################
 ## Explore and search ##
 ########################

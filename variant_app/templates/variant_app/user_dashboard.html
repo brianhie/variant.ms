@@ -6,7 +6,7 @@
   {% if user.is_anonymous %}
   {% include "registration/unregistered_warning.html" %}
   {% else %}
-  <p class="username sans_font">Welcome {{ user.username }}</p>
+  <p class="username sans_font">Welcome {{ user.username }}.</p>
   {% endif %}
 
   {% if not user.is_anonymous %}
@@ -59,6 +59,14 @@
     </li>
     {% endfor %}
   </ul>
+  {% else %}
+  <p class="sans_font" style="font-size: 20px; margin: 0px; color: #999;">
+    <i>
+      Doesn&rsquo;t look like you have anything here. <br/>
+      Follow our <a target="_blank" href="{% url 'variant_app:doc' %}">step-by-step guide</a>
+      to get started!
+    </i>
+  </p>
   {% endif %}
 
 </div>

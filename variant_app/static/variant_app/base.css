@@ -285,6 +285,20 @@ a {
     color: #404040;
 }
 
+.doc_text {
+    font-size: 16px;
+    color: #404040;
+}
+
+.doc_text li {
+    margin: 10px 0;
+}
+
+.doc_inline {
+    font-size: 20px;
+    padding: 0px 3px 0px 1px;
+}
+
 .base_text {
     white-space: pre-wrap;
     display: inline-table;

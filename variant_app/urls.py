@@ -9,9 +9,10 @@ urlpatterns = [
 
     url(r'^home/', views.user_home, name='user_home'),
 
-    url(r'^explore/', views.explore_home, name='explore_home'),
+    url(r'^doc/', views.doc, name='doc'),
 
-    url(r'^search/results', views.search_results, name='search_results'),
+    url(r'^explore/', views.explore_home, name='explore_home'),
+    url(r'^search/results/', views.search_results, name='search_results'),
 
     url(r'^corpus/(?P<corpus_id>[0-9]+)/$', views.corpus, name='corpus'),
     url(r'^corpus/add/$', views.add_corpus, name='add_corpus'),
